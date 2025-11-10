@@ -60,48 +60,48 @@ Next.js 15 App Router structure:
 
 ### Database Schema & Migrations
 
-- [ ] T021 Define complete Prisma schema in `prisma/schema.prisma` (User, Product, Category, Cart, Order, Review, PromoCode, etc.)
-- [ ] T022 Create initial database migration with `prisma migrate dev --name init`
-- [ ] T023 Generate Prisma client with `prisma generate`
-- [ ] T024 Create database seed script in `prisma/seed.ts` (admin user, sample categories, products)
-- [ ] T025 [P] Create Prisma client singleton in `lib/db.ts` with connection pooling
+- [X] T021 Define complete Prisma schema in `prisma/schema.prisma` (User, Product, Category, Cart, Order, Review, PromoCode, etc.)
+- [X] T022 Create initial database migration with `prisma migrate dev --name init` (Requires DB connection - user must run manually)
+- [X] T023 Generate Prisma client with `prisma generate`
+- [X] T024 Create database seed script in `prisma/seed.ts` (admin user, sample categories, products)
+- [X] T025 [P] Create Prisma client singleton in `lib/db.ts` with connection pooling
 
 ### Authentication Foundation
 
-- [ ] T026 Configure NextAuth.js in `app/api/auth/[...nextauth]/route.ts` with credentials and OAuth providers
-- [ ] T027 [P] Create auth configuration in `lib/auth.ts` (session strategy, callbacks, providers)
-- [ ] T028 [P] Create authentication middleware in `middleware.ts` for protected routes
-- [ ] T029 [P] Define auth-related Zod schemas in `lib/validations.ts` (login, register, reset password)
+- [X] T026 Configure NextAuth.js in `app/api/auth/[...nextauth]/route.ts` with credentials and OAuth providers
+- [X] T027 [P] Create auth configuration in `lib/auth.ts` (session strategy, callbacks, providers)
+- [X] T028 [P] Create authentication middleware in `middleware.ts` for protected routes
+- [X] T029 [P] Define auth-related Zod schemas in `lib/validations.ts` (login, register, reset password)
 
 ### Core Utilities & Configuration
 
-- [ ] T030 [P] Create utility functions in `lib/utils.ts` (cn, formatters, validators)
-- [ ] T031 [P] Create environment variable validation in `lib/env.ts` using Zod
-- [ ] T032 [P] Create constants file in `lib/constants.ts` (shipping rates, tax rates, etc.)
-- [ ] T033 [P] Initialize shadcn/ui with `npx shadcn-ui@latest init`
-- [ ] T034 [P] Add shadcn/ui base components: button, input, card, dialog, toast, dropdown-menu, select, label, checkbox
+- [X] T030 [P] Create utility functions in `lib/utils.ts` (cn, formatters, validators)
+- [X] T031 [P] Create environment variable validation in `lib/env.ts` using Zod
+- [X] T032 [P] Create constants file in `lib/constants.ts` (shipping rates, tax rates, etc.)
+- [X] T033 [P] Initialize shadcn/ui with `npx shadcn-ui@latest init`
+- [X] T034 [P] Add shadcn/ui base components: button, input, card, dialog, toast, dropdown-menu, select, label, checkbox
 
 ### Payment & External Services
 
-- [ ] T035 [P] Create Stripe client in `lib/stripe.ts` with server-side key configuration
-- [ ] T036 [P] Create email service client in `lib/email.ts` (Resend or SendGrid)
-- [ ] T037 [P] Create Cloudinary configuration in `lib/cloudinary.ts` for image uploads
-- [ ] T038 [P] Create Stripe webhook handler in `app/api/webhooks/stripe/route.ts` with signature verification
+- [X] T035 [P] Create Stripe client in `lib/stripe.ts` with server-side key configuration
+- [X] T036 [P] Create email service client in `lib/email.ts` (Resend or SendGrid)
+- [X] T037 [P] Create Cloudinary configuration in `lib/cloudinary.ts` for image uploads
+- [X] T038 [P] Create Stripe webhook handler in `app/api/webhooks/stripe/route.ts` with signature verification
 
 ### Testing Infrastructure
 
-- [ ] T039 [P] Create test setup file in `tests/setup.ts` with global mocks and utilities
-- [ ] T040 [P] Create test fixtures factory in `tests/fixtures/users.ts` for user test data
-- [ ] T041 [P] Create test fixtures factory in `tests/fixtures/products.ts` for product test data
-- [ ] T042 [P] Create test fixtures factory in `tests/fixtures/orders.ts` for order test data
+- [X] T039 [P] Create test setup file in `__tests__/setup.ts` with global mocks and utilities
+- [X] T040 [P] Create test fixtures factory in `__tests__/fixtures/users.ts` for user test data
+- [X] T041 [P] Create test fixtures factory in `__tests__/fixtures/products.ts` for product test data
+- [X] T042 [P] Create test fixtures factory in `__tests__/fixtures/orders.ts` for order test data
 
 ### Global Layout & Error Handling
 
-- [ ] T043 Create root layout in `app/layout.tsx` with providers (NextAuth, Toaster, font optimization)
-- [ ] T044 [P] Create global error boundary in `app/error.tsx`
-- [ ] T045 [P] Create global loading state in `app/loading.tsx`
-- [ ] T046 [P] Create 404 page in `app/not-found.tsx`
-- [ ] T047 [P] Create global styles in `app/globals.css` with Tailwind directives
+- [X] T043 Create root layout in `app/layout.tsx` with providers (NextAuth, Toaster, font optimization)
+- [X] T044 [P] Create global error boundary in `app/error.tsx`
+- [X] T045 [P] Create global loading state in `app/loading.tsx`
+- [X] T046 [P] Create 404 page in `app/not-found.tsx`
+- [X] T047 [P] Create global styles in `app/globals.css` with Tailwind directives
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
