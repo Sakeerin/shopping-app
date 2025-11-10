@@ -1,0 +1,115 @@
+# User Profile Contracts
+
+## Server Actions
+
+### updateProfile
+Update user profile information.
+
+**File**: `actions/profile.ts`
+**Authorization**: Authenticated
+
+```typescript
+async function updateProfile(data: UpdateProfileInput): Promise<UserResult>
+
+Input:
+  name?: string
+  email?: string
+  currentPassword?: string (required if changing email)
+  newPassword?: string
+  image?: string
+
+Output (Success):
+  success: true
+  user: User
+
+Output (Error):
+  success: false
+  error: { code: string, message: string }
+```
+
+---
+
+### addAddress
+Add new shipping address.
+
+**File**: `actions/profile.ts`
+**Authorization**: Authenticated
+
+```typescript
+async function addAddress(data: AddressInput): Promise<AddressResult>
+```
+
+---
+
+### updateAddress
+Update existing address.
+
+**File**: `actions/profile.ts`
+**Authorization**: Authenticated
+
+```typescript
+async function updateAddress(id: string, data: AddressInput): Promise<AddressResult>
+```
+
+---
+
+### deleteAddress
+Delete shipping address.
+
+**File**: `actions/profile.ts`
+**Authorization**: Authenticated
+
+```typescript
+async function deleteAddress(id: string): Promise<Result>
+```
+
+---
+
+### setDefaultAddress
+Set address as default shipping address.
+
+**File**: `actions/profile.ts`
+**Authorization**: Authenticated
+
+```typescript
+async function setDefaultAddress(id: string): Promise<Result>
+```
+
+---
+
+### deleteAccount
+Delete user account (GDPR compliance).
+
+**File**: `actions/profile.ts`
+**Authorization**: Authenticated
+
+```typescript
+async function deleteAccount(): Promise<Result>
+
+Behavior:
+  - Soft delete user (set deletedAt)
+  - Anonymize orders (keep for records)
+  - Delete personal data
+  - Send confirmation email
+```
+
+---
+
+### exportUserData
+Export all user data (GDPR compliance).
+
+**File**: `actions/profile.ts`
+**Authorization**: Authenticated
+
+```typescript
+async function exportUserData(): Promise<UserDataExport>
+
+Output:
+  {
+    user: User
+    orders: Order[]
+    reviews: Review[]
+    addresses: Address[]
+    exportDate: string
+  }
+```

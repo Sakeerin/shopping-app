@@ -1,0 +1,649 @@
+# Order Management Contracts
+
+## Server Actions
+
+### createOrder
+Create order from cart (checkout process).
+
+**File**: `actions/checkout.ts`
+**Authorization**: Public (works for guest and authenticated users)
+
+```typescript
+async function createOrder(data: CheckoutInput): Promise<OrderResult>
+
+Input:
+  shippingAddress: {
+    fullName: string
+    street: string
+    street2?: string
+    city: string
+    state: string
+    postalCode: string
+    country: string
+    phone: string
+  }
+  billingAddress?: Address (defaults to shipping address)
+  saveAddress?: boolean (for authenticated users)
+  email: string (for guest checkout)
+  notes?: string (customer order notes)
+
+Output (Success):
+  success: true
+  order: {
+    id: string
+    orderNumber: string
+    paymentIntentClientSecret: string // For Stripe Elements
+  }
+
+Output (Error):
+  success: false
+  error: {
+    code: "EMPTY_CART" | "VALIDATION_ERROR" | "OUT_OF_STOCK" | "PAYMENT_INIT_FAILED"
+    message: string
+    outOfStockItems?: Array<{ productName: string, requested: number, available: number }>
+  }
+```
+
+**Order Creation Flow**:
+1. Validate cart is not empty
+2. Validate all items still in stock
+3. Lock inventory (prevent overselling)
+4. Calculate totals (subtotal, tax, shipping)
+5. Create order record (status: PENDING)
+6. Create Stripe Payment Intent
+7. Return client secret for frontend payment
+8. Clear cart on success
+
+**Inventory Locking**:
+```typescript
+// Use database transaction to prevent race conditions
+await prisma.$transaction(async (tx) => {
+  for (const item of cartItems) {
+    await tx.product.update({
+      where: { id: item.productId, stock: { gte: item.quantity } },
+      data: { stock: { decrement: item.quantity } }
+    })
+  }
+  // Create order...
+})
+```
+
+---
+
+### confirmOrder
+Confirm order after successful payment (called by Stripe webhook).
+
+**File**: `services/orders.ts`
+**Authorization**: Internal (webhook)
+
+```typescript
+async function confirmOrder(paymentIntentId: string): Promise<void>
+
+Input:
+  paymentIntentId: string (Stripe Payment Intent ID)
+
+Behavior:
+  1. Find order by paymentIntentId
+  2. Update order status to PROCESSING
+  3. Update payment status to SUCCEEDED
+  4. Send order confirmation email
+  5. Clear user's cart
+  6. Create audit log entry
+```
+
+---
+
+### getOrders
+Fetch user's order history.
+
+**File**: `services/orders.ts`
+**Authorization**: Authenticated
+
+```typescript
+async function getOrders(userId: string, params?: OrderFilters): Promise<OrderList>
+
+Input:
+  userId: string
+  page?: number (default: 1)
+  limit?: number (default: 10)
+  status?: OrderStatus
+
+Output:
+  data: Array<{
+    id: string
+    orderNumber: string
+    status: OrderStatus
+    paymentStatus: PaymentStatus
+    totalAmount: number
+    createdAt: string
+    shippedAt?: string
+    deliveredAt?: string
+    items: Array<{
+      productName: string
+      productImage: string
+      quantity: number
+      priceSnapshot: number
+      lineTotal: number
+    }>
+    itemCount: number
+  }>
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+  }
+```
+
+---
+
+### getOrderById
+Fetch single order details.
+
+**File**: `services/orders.ts`
+**Authorization**: Authenticated (own orders) or Admin (all orders)
+
+```typescript
+async function getOrderById(orderId: string): Promise<Order | null>
+
+Input:
+  orderId: string
+
+Output:
+  {
+    id: string
+    orderNumber: string
+    status: OrderStatus
+    paymentStatus: PaymentStatus
+    userEmail: string
+    subtotal: number
+    taxAmount: number
+    shippingCost: number
+    discountAmount: number
+    totalAmount: number
+    shippingAddress: Address
+    billingAddress: Address
+    trackingNumber?: string
+    promoCode?: string
+    notes?: string
+    items: Array<{
+      id: string
+      productName: string
+      productSlug: string
+      productImage: string
+      variantDetails?: string
+      priceSnapshot: number
+      quantity: number
+      lineTotal: number
+    }>
+    createdAt: string
+    updatedAt: string
+    shippedAt?: string
+    deliveredAt?: string
+  } | null
+```
+
+**Authorization Check**:
+```typescript
+const session = await getServerSession()
+const order = await prisma.order.findUnique({ where: { id: orderId } })
+
+if (!session?.user?.isAdmin && order.userId !== session?.user?.id) {
+  throw new Error('Unauthorized')
+}
+```
+
+---
+
+### cancelOrder
+Cancel an order (customer or admin).
+
+**File**: `actions/orders.ts`
+**Authorization**: Authenticated (own orders before SHIPPED) or Admin (any order)
+
+```typescript
+async function cancelOrder(orderId: string, reason?: string): Promise<Result>
+
+Input:
+  orderId: string
+  reason?: string
+
+Output (Success):
+  success: true
+  message: "Order cancelled"
+
+Output (Error):
+  success: false
+  error: {
+    code: "NOT_FOUND" | "UNAUTHORIZED" | "CANNOT_CANCEL"
+    message: string
+  }
+```
+
+**Business Rules**:
+- Customers can cancel PENDING or PROCESSING orders
+- Cannot cancel SHIPPED, DELIVERED, or already CANCELLED orders
+- Admins can cancel any order before DELIVERED
+- Refund payment if already charged
+- Restore inventory stock
+
+---
+
+## Admin Server Actions
+
+### getAllOrders
+Fetch all orders with filtering (admin only).
+
+**File**: `services/orders.ts`
+**Authorization**: Admin
+
+```typescript
+async function getAllOrders(params: AdminOrderFilters): Promise<OrderList>
+
+Input:
+  page?: number
+  limit?: number
+  status?: OrderStatus
+  paymentStatus?: PaymentStatus
+  searchQuery?: string (order number, customer email)
+  startDate?: string
+  endDate?: string
+  sortBy?: "newest" | "oldest" | "total_asc" | "total_desc"
+
+Output:
+  data: Array<{
+    id: string
+    orderNumber: string
+    status: OrderStatus
+    paymentStatus: PaymentStatus
+    userEmail: string
+    totalAmount: number
+    itemCount: number
+    createdAt: string
+    shippedAt?: string
+    customer?: {
+      name: string
+      email: string
+    }
+  }>
+  pagination: PaginationMeta
+  summary: {
+    totalOrders: number
+    totalRevenue: number
+    pendingOrders: number
+    processingOrders: number
+  }
+```
+
+---
+
+### updateOrderStatus
+Update order status (admin only).
+
+**File**: `actions/orders.ts`
+**Authorization**: Admin
+
+```typescript
+async function updateOrderStatus(orderId: string, data: OrderStatusUpdate): Promise<OrderResult>
+
+Input:
+  orderId: string
+  status: OrderStatus
+  trackingNumber?: string (required if status is SHIPPED)
+  adminNotes?: string
+
+Output (Success):
+  success: true
+  order: Order
+
+Output (Error):
+  success: false
+  error: {
+    code: "NOT_FOUND" | "INVALID_STATUS_TRANSITION"
+    message: string
+  }
+```
+
+**Valid Status Transitions**:
+- PENDING → PROCESSING | CANCELLED
+- PROCESSING → SHIPPED | CANCELLED
+- SHIPPED → DELIVERED
+- Any status → REFUNDED (admin only)
+
+**Side Effects**:
+- Send customer notification email on status change
+- If SHIPPED, email includes tracking number
+- If CANCELLED/REFUNDED, initiate Stripe refund
+- If CANCELLED, restore inventory
+
+---
+
+### addOrderTracking
+Add tracking information to shipped order (admin only).
+
+**File**: `actions/orders.ts`
+**Authorization**: Admin
+
+```typescript
+async function addOrderTracking(orderId: string, trackingNumber: string): Promise<OrderResult>
+
+Input:
+  orderId: string
+  trackingNumber: string
+
+Output (Success):
+  success: true
+  order: Order
+```
+
+**Side Effects**:
+- Updates order status to SHIPPED
+- Sends shipping notification email to customer
+
+---
+
+## Webhook Endpoint
+
+### POST /api/webhooks/stripe
+Handle Stripe payment events.
+
+**Authorization**: Webhook signature verification
+
+```typescript
+Request Headers:
+  stripe-signature: string
+
+Request Body:
+  Stripe Event object
+
+Response:
+  { received: true }
+```
+
+**Handled Events**:
+
+#### payment_intent.succeeded
+- Update order payment status to SUCCEEDED
+- Update order status to PROCESSING
+- Send order confirmation email
+- Clear user's cart
+
+#### payment_intent.payment_failed
+- Update order payment status to FAILED
+- Restore inventory
+- Send payment failed email
+
+#### payment_intent.canceled
+- Update order status to CANCELLED
+- Update payment status to CANCELLED
+- Restore inventory
+
+#### charge.refunded
+- Update order status to REFUNDED
+- Update payment status to REFUNDED
+- Send refund confirmation email
+
+**Webhook Verification**:
+```typescript
+const sig = req.headers.get('stripe-signature')
+const event = stripe.webhooks.constructEvent(
+  body,
+  sig!,
+  process.env.STRIPE_WEBHOOK_SECRET!
+)
+```
+
+---
+
+## Order Calculations
+
+### Subtotal
+```typescript
+subtotal = sum(orderItem.quantity * orderItem.priceSnapshot for each item)
+```
+
+### Tax Calculation
+```typescript
+// Simple tax calculation by state
+const TAX_RATES = {
+  'CA': 0.0725, // 7.25%
+  'NY': 0.04,   // 4%
+  'TX': 0.0625, // 6.25%
+  // ... other states
+}
+
+taxAmount = subtotal * (TAX_RATES[shippingAddress.state] || 0)
+```
+
+**Future Enhancement**: Integrate with Avalara/TaxJar for accurate tax calculation
+
+### Shipping Cost
+```typescript
+// Flat rate shipping (MVP)
+const SHIPPING_RATES = {
+  'STANDARD': 5.99,
+  'EXPRESS': 15.99
+}
+
+shippingCost = SHIPPING_RATES['STANDARD']
+
+// Free shipping threshold
+if (subtotal >= 50) {
+  shippingCost = 0
+}
+```
+
+**Future Enhancement**: Integrate with shipping carrier APIs (UPS, FedEx, USPS)
+
+### Total
+```typescript
+totalAmount = subtotal + taxAmount + shippingCost - discountAmount
+```
+
+---
+
+## Order Number Generation
+
+```typescript
+function generateOrderNumber(): string {
+  const timestamp = Date.now().toString(36).toUpperCase()
+  const random = Math.random().toString(36).substring(2, 6).toUpperCase()
+  return `ORD-${timestamp}-${random}`
+}
+
+// Example: "ORD-L8N3K9Z-7A4C"
+```
+
+**Properties**:
+- Unique and sortable by creation time
+- Human-readable
+- URL-safe
+
+---
+
+## Email Notifications
+
+### Order Confirmation
+**Trigger**: Payment succeeded
+**Template**: `order-confirmation.tsx`
+**Content**:
+- Order number and date
+- Items ordered with images
+- Shipping address
+- Payment summary
+- Estimated delivery date
+- Link to order tracking page
+
+### Shipping Notification
+**Trigger**: Order status changed to SHIPPED
+**Template**: `order-shipped.tsx`
+**Content**:
+- Order number
+- Tracking number with carrier link
+- Estimated delivery date
+- Shipped items summary
+
+### Delivery Confirmation
+**Trigger**: Order status changed to DELIVERED
+**Template**: `order-delivered.tsx`
+**Content**:
+- Order number
+- Request for review
+- Link to product review pages
+
+### Cancellation Confirmation
+**Trigger**: Order cancelled
+**Template**: `order-cancelled.tsx`
+**Content**:
+- Order number
+- Cancellation reason
+- Refund information
+- Customer support contact
+
+---
+
+## Order States
+
+### State Diagram
+```
+PENDING
+  ↓ (payment succeeded)
+PROCESSING
+  ↓ (admin ships order)
+SHIPPED
+  ↓ (delivered)
+DELIVERED
+
+Any state (before SHIPPED) → CANCELLED
+PROCESSING/SHIPPED → REFUNDED (admin action)
+```
+
+### State Descriptions
+- **PENDING**: Order created, awaiting payment
+- **PROCESSING**: Payment successful, preparing order
+- **SHIPPED**: Order shipped to customer
+- **DELIVERED**: Order delivered successfully
+- **CANCELLED**: Order cancelled (before shipping)
+- **REFUNDED**: Order refunded after payment
+
+---
+
+## Error Codes
+
+### EMPTY_CART
+User attempted checkout with empty cart.
+
+### OUT_OF_STOCK
+One or more items are no longer available.
+
+### PAYMENT_INIT_FAILED
+Failed to create Stripe Payment Intent.
+
+### INVALID_STATUS_TRANSITION
+Attempted invalid order status change.
+
+### CANNOT_CANCEL
+Order cannot be cancelled (already shipped/delivered).
+
+---
+
+## Analytics & Reporting
+
+### Order Metrics (Admin Dashboard)
+```typescript
+async function getOrderMetrics(startDate: Date, endDate: Date) {
+  return {
+    totalOrders: number,
+    totalRevenue: number,
+    averageOrderValue: number,
+    conversionRate: number,
+    topProducts: Array<{ productName: string, quantity: number, revenue: number }>,
+    ordersByStatus: { [status: string]: number },
+    revenueByDay: Array<{ date: string, revenue: number }>
+  }
+}
+```
+
+---
+
+## Usage Examples
+
+### Checkout Process (Client Component)
+```typescript
+'use client'
+
+import { createOrder } from '@/actions/checkout'
+import { Elements, PaymentElement } from '@stripe/react-stripe-js'
+
+function CheckoutForm({ cart }) {
+  async function handleCheckout(formData: FormData) {
+    // Create order and get payment intent
+    const result = await createOrder({
+      shippingAddress: {
+        fullName: formData.get('fullName'),
+        street: formData.get('street'),
+        city: formData.get('city'),
+        state: formData.get('state'),
+        postalCode: formData.get('postalCode'),
+        country: 'US',
+        phone: formData.get('phone')
+      },
+      email: formData.get('email')
+    })
+
+    if (!result.success) {
+      toast.error(result.error.message)
+      return
+    }
+
+    // Initialize Stripe with client secret
+    setClientSecret(result.order.paymentIntentClientSecret)
+  }
+
+  return (
+    <form action={handleCheckout}>
+      {/* Address fields */}
+      <Elements stripe={stripePromise} options={{ clientSecret }}>
+        <PaymentElement />
+        <button type="submit">Place Order</button>
+      </Elements>
+    </form>
+  )
+}
+```
+
+### Order History (Server Component)
+```typescript
+// app/(shop)/orders/page.tsx
+import { getOrders } from '@/services/orders'
+import { getServerSession } from 'next-auth'
+
+export default async function OrdersPage() {
+  const session = await getServerSession()
+  const orders = await getOrders(session.user.id)
+
+  return (
+    <div>
+      <h1>Order History</h1>
+      {orders.data.map(order => (
+        <OrderCard key={order.id} order={order} />
+      ))}
+    </div>
+  )
+}
+```
+
+### Admin Order Management (Server Component)
+```typescript
+// app/(dashboard)/admin/orders/page.tsx
+import { getAllOrders } from '@/services/orders'
+
+export default async function AdminOrdersPage({ searchParams }) {
+  const orders = await getAllOrders({
+    page: searchParams.page || 1,
+    status: searchParams.status
+  })
+
+  return <OrdersTable orders={orders.data} />
+}
+```

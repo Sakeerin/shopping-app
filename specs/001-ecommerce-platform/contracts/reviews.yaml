@@ -1,0 +1,109 @@
+# Product Reviews Contracts
+
+## Server Actions
+
+### submitReview
+Submit product review (requires verified purchase).
+
+**File**: `actions/reviews.ts`
+**Authorization**: Authenticated
+
+```typescript
+async function submitReview(data: ReviewInput): Promise<ReviewResult>
+
+Input:
+  productId: string
+  rating: number (1-5)
+  title?: string
+  comment: string (min: 10, max: 2000 characters)
+
+Output (Success):
+  success: true
+  review: Review
+
+Output (Error):
+  success: false
+  error: {
+    code: "NOT_PURCHASED" | "ALREADY_REVIEWED" | "VALIDATION_ERROR"
+    message: string
+  }
+```
+
+**Business Rules**:
+- User must have purchased product (verified purchase)
+- One review per user per product
+- Auto-calculates isVerifiedPurchase flag
+
+---
+
+### updateReview
+Update existing review.
+
+**File**: `actions/reviews.ts`
+**Authorization**: Authenticated (own reviews only)
+
+```typescript
+async function updateReview(id: string, data: UpdateReviewInput): Promise<ReviewResult>
+```
+
+---
+
+### deleteReview
+Delete review.
+
+**File**: `actions/reviews.ts`
+**Authorization**: Authenticated (own reviews) or Admin
+
+```typescript
+async function deleteReview(id: string): Promise<Result>
+```
+
+---
+
+### markReviewHelpful
+Mark review as helpful.
+
+**File**: `actions/reviews.ts`
+**Authorization**: Public
+
+```typescript
+async function markReviewHelpful(reviewId: string): Promise<Result>
+```
+
+**Business Logic**:
+- Increment helpfulCount
+- Track per-user to prevent multiple votes (optional)
+
+---
+
+### getProductReviews
+Fetch reviews for a product (Server Component).
+
+**File**: `services/reviews.ts`
+**Authorization**: Public
+
+```typescript
+async function getProductReviews(productId: string, params?: ReviewFilters): Promise<ReviewList>
+
+Input:
+  productId: string
+  page?: number
+  limit?: number
+  sortBy?: "helpful" | "recent" | "rating_high" | "rating_low"
+  rating?: number (filter by specific rating)
+
+Output:
+  data: Review[]
+  pagination: PaginationMeta
+  summary: {
+    averageRating: number
+    totalReviews: number
+    ratingDistribution: {
+      5: number,
+      4: number,
+      3: number,
+      2: number,
+      1: number
+    }
+  }
+```

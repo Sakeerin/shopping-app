@@ -1,0 +1,357 @@
+# Authentication Contracts
+
+## Server Actions
+
+### registerUser
+Create a new user account with email and password.
+
+**File**: `actions/auth.ts`
+**Authorization**: Public
+
+```typescript
+async function registerUser(data: RegisterInput): Promise<RegisterResult>
+
+Input:
+  name: string (min: 2, max: 100)
+  email: string (valid email format)
+  password: string (min: 8 characters)
+
+Output (Success):
+  success: true
+  user: {
+    id: string
+    name: string
+    email: string
+    role: "CUSTOMER"
+  }
+
+Output (Error):
+  success: false
+  error: {
+    code: "VALIDATION_ERROR" | "EMAIL_EXISTS"
+    message: string
+    fields?: { [key: string]: string }
+  }
+```
+
+**Validation Rules**:
+- Email must be unique
+- Password must be hashed with bcrypt (cost: 12)
+- Automatically sends email verification (optional for MVP)
+
+---
+
+### loginUser
+Authenticate user with email and password.
+
+**File**: `actions/auth.ts`
+**Authorization**: Public
+
+```typescript
+async function loginUser(credentials: LoginInput): Promise<LoginResult>
+
+Input:
+  email: string
+  password: string
+
+Output (Success):
+  success: true
+  redirectTo: string // "/" or intended destination
+
+Output (Error):
+  success: false
+  error: {
+    code: "INVALID_CREDENTIALS" | "ACCOUNT_LOCKED" | "RATE_LIMIT_EXCEEDED"
+    message: string
+  }
+```
+
+**Rate Limiting**: 5 attempts per 15 minutes per email
+
+---
+
+### requestPasswordReset
+Request password reset email.
+
+**File**: `actions/auth.ts`
+**Authorization**: Public
+
+```typescript
+async function requestPasswordReset(email: string): Promise<Result>
+
+Input:
+  email: string
+
+Output (Success):
+  success: true
+  message: "If account exists, reset email has been sent"
+
+Output (Error):
+  success: false
+  error: {
+    code: "RATE_LIMIT_EXCEEDED"
+    message: string
+  }
+```
+
+**Security**: Always returns success even if email doesn't exist (prevent enumeration)
+**Rate Limiting**: 3 requests per hour per email
+
+---
+
+### resetPassword
+Reset password using token from email.
+
+**File**: `actions/auth.ts`
+**Authorization**: Public
+
+```typescript
+async function resetPassword(data: ResetInput): Promise<Result>
+
+Input:
+  token: string
+  newPassword: string (min: 8 characters)
+
+Output (Success):
+  success: true
+  message: "Password updated successfully"
+
+Output (Error):
+  success: false
+  error: {
+    code: "INVALID_TOKEN" | "TOKEN_EXPIRED" | "VALIDATION_ERROR"
+    message: string
+  }
+```
+
+**Token Validity**: 1 hour
+**Token Storage**: Stored in database with expiration
+
+---
+
+### signOut
+Sign out the current user.
+
+**File**: `actions/auth.ts`
+**Authorization**: Authenticated
+
+```typescript
+async function signOut(): Promise<void>
+```
+
+**Behavior**: Clears session cookie, redirects to homepage
+
+---
+
+## API Routes (NextAuth.js)
+
+### POST /api/auth/signin
+NextAuth.js credential login endpoint.
+
+**Authorization**: Public
+
+```typescript
+Request Body:
+  email: string
+  password: string
+  callbackUrl?: string
+
+Response (302 Redirect):
+  On success: Redirect to callbackUrl or "/"
+  On error: Redirect to /login with error query param
+```
+
+---
+
+### GET /api/auth/signin
+NextAuth.js login page (redirects to custom /login page).
+
+**Authorization**: Public
+
+---
+
+### POST /api/auth/signout
+NextAuth.js signout endpoint.
+
+**Authorization**: Authenticated
+
+---
+
+### GET /api/auth/session
+Get current session.
+
+**Authorization**: Public (returns null if not authenticated)
+
+```typescript
+Response:
+  {
+    user: {
+      id: string
+      name: string
+      email: string
+      image: string | null
+      role: "CUSTOMER" | "ADMIN"
+    }
+    expires: string // ISO timestamp
+  } | null
+```
+
+---
+
+### GET /api/auth/callback/google
+OAuth callback for Google authentication.
+
+**Authorization**: Public
+
+**Flow**:
+1. User clicks "Sign in with Google"
+2. Redirected to Google OAuth
+3. Google redirects back to this endpoint
+4. Creates/updates user account
+5. Redirects to homepage
+
+---
+
+### GET /api/auth/callback/github
+OAuth callback for GitHub authentication.
+
+**Authorization**: Public
+
+**Flow**: Same as Google callback
+
+---
+
+## OAuth Provider Configuration
+
+### Google
+**Required Scopes**: email, profile
+**Callback URL**: `{APP_URL}/api/auth/callback/google`
+
+### GitHub
+**Required Scopes**: user:email
+**Callback URL**: `{APP_URL}/api/auth/callback/github`
+
+---
+
+## Session Management
+
+### Session Strategy
+**Type**: JWT (stateless)
+**Storage**: HTTP-only cookie
+**Duration**: 30 days
+**Refresh**: Automatic on activity
+
+### Session Payload
+```typescript
+{
+  user: {
+    id: string
+    email: string
+    name: string
+    role: "CUSTOMER" | "ADMIN"
+  }
+  expires: string
+}
+```
+
+---
+
+## Security Considerations
+
+### Password Security
+- Minimum 8 characters
+- Hashed with bcrypt (cost factor: 12)
+- Never returned in responses
+
+### CSRF Protection
+- NextAuth.js handles CSRF tokens automatically
+- Server Actions have built-in CSRF protection
+
+### Rate Limiting
+- Login: 5 attempts per 15 minutes
+- Password reset: 3 requests per hour
+- Registration: 10 accounts per hour per IP
+
+### Email Verification
+- Optional for MVP
+- Required for password reset
+- Can be enforced in future
+
+---
+
+## Error Responses
+
+### INVALID_CREDENTIALS
+User provided wrong email/password combination.
+
+### EMAIL_EXISTS
+Attempted to register with an email already in use.
+
+### ACCOUNT_LOCKED
+Too many failed login attempts, account temporarily locked.
+
+### RATE_LIMIT_EXCEEDED
+Too many requests, user must wait before retrying.
+
+### INVALID_TOKEN
+Password reset token is invalid or has been used.
+
+### TOKEN_EXPIRED
+Password reset token has expired (> 1 hour old).
+
+---
+
+## Usage Examples
+
+### Register New User
+```typescript
+'use client'
+
+import { registerUser } from '@/actions/auth'
+
+async function handleRegister(formData: FormData) {
+  const result = await registerUser({
+    name: formData.get('name') as string,
+    email: formData.get('email') as string,
+    password: formData.get('password') as string
+  })
+
+  if (result.success) {
+    router.push('/login')
+  } else {
+    setError(result.error.message)
+  }
+}
+```
+
+### Login with Credentials
+```typescript
+'use client'
+
+import { signIn } from 'next-auth/react'
+
+async function handleLogin(email: string, password: string) {
+  const result = await signIn('credentials', {
+    email,
+    password,
+    redirect: false
+  })
+
+  if (result?.ok) {
+    router.push('/')
+  } else {
+    setError('Invalid credentials')
+  }
+}
+```
+
+### OAuth Login
+```typescript
+'use client'
+
+import { signIn } from 'next-auth/react'
+
+function handleGoogleLogin() {
+  signIn('google', { callbackUrl: '/' })
+}
+```

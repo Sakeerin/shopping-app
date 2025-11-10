@@ -1,0 +1,558 @@
+# Product Catalog Contracts
+
+## Server Components (Data Fetching)
+
+Most product data is fetched directly in Server Components using Prisma.
+
+### getProducts
+Fetch paginated product list.
+
+**File**: `services/products.ts`
+**Authorization**: Public
+
+```typescript
+async function getProducts(params: ProductFilters): Promise<ProductList>
+
+Input:
+  page?: number (default: 1)
+  limit?: number (default: 20, max: 100)
+  categoryId?: string
+  minPrice?: number
+  maxPrice?: number
+  inStock?: boolean (default: true)
+  isFeatured?: boolean
+  sortBy?: "price_asc" | "price_desc" | "name" | "newest"
+  search?: string
+
+Output:
+  data: Array<{
+    id: string
+    name: string
+    slug: string
+    description: string
+    price: number
+    images: string[]
+    category: {
+      id: string
+      name: string
+      slug: string
+    }
+    stock: number
+    isActive: boolean
+    isFeatured: boolean
+    averageRating?: number
+    reviewCount: number
+  }>
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+  }
+```
+
+---
+
+### getProductBySlug
+Fetch single product by slug for product detail page.
+
+**File**: `services/products.ts`
+**Authorization**: Public
+
+```typescript
+async function getProductBySlug(slug: string): Promise<Product | null>
+
+Input:
+  slug: string
+
+Output:
+  id: string
+  name: string
+  slug: string
+  description: string
+  price: number
+  images: string[]
+  category: {
+    id: string
+    name: string
+    slug: string
+  }
+  stock: number
+  isActive: boolean
+  isFeatured: boolean
+  metaTitle?: string
+  metaDescription?: string
+  variants: Array<{
+    id: string
+    variantType: string
+    variantValue: string
+    priceAdjustment: number
+    stock: number
+  }>
+  reviews: Array<{
+    id: string
+    user: {
+      name: string
+      image?: string
+    }
+    rating: number
+    title?: string
+    comment: string
+    isVerifiedPurchase: boolean
+    createdAt: string
+  }>
+  averageRating: number
+  reviewCount: number
+  relatedProducts: Array<{
+    id: string
+    name: string
+    slug: string
+    price: number
+    images: string[]
+  }>
+```
+
+---
+
+### getCategories
+Fetch all categories with hierarchy.
+
+**File**: `services/products.ts`
+**Authorization**: Public
+
+```typescript
+async function getCategories(): Promise<Category[]>
+
+Output:
+  Array<{
+    id: string
+    name: string
+    slug: string
+    description?: string
+    image?: string
+    displayOrder: number
+    children: Array<{
+      id: string
+      name: string
+      slug: string
+      productCount: number
+    }>
+    productCount: number
+  }>
+```
+
+---
+
+### getFeaturedProducts
+Fetch featured products for homepage.
+
+**File**: `services/products.ts`
+**Authorization**: Public
+
+```typescript
+async function getFeaturedProducts(limit?: number): Promise<Product[]>
+
+Input:
+  limit: number (default: 8)
+
+Output:
+  Array<{
+    id: string
+    name: string
+    slug: string
+    description: string
+    price: number
+    images: string[]
+    category: { name: string, slug: string }
+  }>
+```
+
+---
+
+## API Routes
+
+### GET /api/search/autocomplete
+Product search autocomplete for search bar.
+
+**Authorization**: Public
+**Rate Limit**: 100 requests/minute per IP
+
+```typescript
+Request Query:
+  q: string (min: 2 characters)
+  limit?: number (default: 5, max: 10)
+
+Response:
+  {
+    products: Array<{
+      id: string
+      name: string
+      slug: string
+      price: number
+      image: string
+      category: string
+    }>
+    categories: Array<{
+      id: string
+      name: string
+      slug: string
+      productCount: number
+    }>
+  }
+```
+
+**Caching**: 5 minutes
+
+---
+
+## Admin Server Actions
+
+### createProduct
+Create a new product (admin only).
+
+**File**: `actions/products.ts`
+**Authorization**: Admin
+
+```typescript
+async function createProduct(data: CreateProductInput): Promise<ProductResult>
+
+Input:
+  name: string (min: 2, max: 200)
+  slug: string (unique, URL-safe)
+  description: string (min: 10, max: 5000)
+  price: number (min: 0.01)
+  images: string[] (min: 1, max: 10, valid URLs)
+  categoryId: string
+  stock: number (min: 0, integer)
+  isActive: boolean
+  isFeatured: boolean
+  metaTitle?: string (max: 60)
+  metaDescription?: string (max: 160)
+  variants?: Array<{
+    variantType: string
+    variantValue: string
+    priceAdjustment: number
+    stock: number
+  }>
+
+Output (Success):
+  success: true
+  product: Product
+
+Output (Error):
+  success: false
+  error: {
+    code: "VALIDATION_ERROR" | "SLUG_EXISTS"
+    message: string
+    fields?: { [key: string]: string }
+  }
+```
+
+**Side Effects**:
+- Revalidates product list pages
+- Clears product cache
+
+---
+
+### updateProduct
+Update existing product (admin only).
+
+**File**: `actions/products.ts`
+**Authorization**: Admin
+
+```typescript
+async function updateProduct(id: string, data: UpdateProductInput): Promise<ProductResult>
+
+Input:
+  id: string (product ID)
+  name?: string
+  slug?: string
+  description?: string
+  price?: number
+  images?: string[]
+  categoryId?: string
+  stock?: number
+  isActive?: boolean
+  isFeatured?: boolean
+  metaTitle?: string
+  metaDescription?: string
+
+Output (Success):
+  success: true
+  product: Product
+
+Output (Error):
+  success: false
+  error: {
+    code: "NOT_FOUND" | "VALIDATION_ERROR" | "SLUG_EXISTS"
+    message: string
+  }
+```
+
+**Side Effects**:
+- Revalidates product detail page
+- Revalidates category pages if category changed
+- Updates cart items if price changed (notify users)
+
+---
+
+### deleteProduct
+Soft delete a product (admin only).
+
+**File**: `actions/products.ts`
+**Authorization**: Admin
+
+```typescript
+async function deleteProduct(id: string): Promise<Result>
+
+Input:
+  id: string
+
+Output (Success):
+  success: true
+  message: "Product deleted"
+
+Output (Error):
+  success: false
+  error: {
+    code: "NOT_FOUND" | "HAS_ACTIVE_ORDERS"
+    message: string
+  }
+```
+
+**Business Logic**:
+- Sets `isActive` to false instead of deleting
+- Removes from cart items
+- Preserves in existing orders
+
+---
+
+### createCategory
+Create a new category (admin only).
+
+**File**: `actions/products.ts`
+**Authorization**: Admin
+
+```typescript
+async function createCategory(data: CreateCategoryInput): Promise<CategoryResult>
+
+Input:
+  name: string (min: 2, max: 100)
+  slug: string (unique, URL-safe)
+  description?: string
+  image?: string
+  parentId?: string
+  displayOrder: number (default: 0)
+
+Output (Success):
+  success: true
+  category: Category
+
+Output (Error):
+  success: false
+  error: {
+    code: "VALIDATION_ERROR" | "SLUG_EXISTS"
+    message: string
+  }
+```
+
+---
+
+### updateCategory
+Update existing category (admin only).
+
+**File**: `actions/products.ts`
+**Authorization**: Admin
+
+```typescript
+async function updateCategory(id: string, data: UpdateCategoryInput): Promise<CategoryResult>
+
+Input:
+  id: string
+  name?: string
+  slug?: string
+  description?: string
+  image?: string
+  parentId?: string
+  displayOrder?: number
+
+Output (Success):
+  success: true
+  category: Category
+
+Output (Error):
+  success: false
+  error: {
+    code: "NOT_FOUND" | "VALIDATION_ERROR" | "CIRCULAR_REFERENCE"
+    message: string
+  }
+```
+
+**Validation**:
+- Prevent circular parent references
+- Cannot set category as its own parent
+
+---
+
+## Data Caching Strategy
+
+### Product List
+- Cache: 60 seconds (ISR)
+- Revalidate on: Product create/update/delete
+
+### Product Detail
+- Cache: 60 seconds (ISR)
+- Revalidate on: Product update, new review
+
+### Categories
+- Cache: 5 minutes (static)
+- Revalidate on: Category create/update/delete
+
+### Search Autocomplete
+- Cache: 5 minutes (API route)
+- No revalidation (stale-while-revalidate)
+
+---
+
+## Search Implementation
+
+### Full-Text Search
+Uses PostgreSQL full-text search on `products` table:
+
+```sql
+SELECT * FROM products
+WHERE to_tsvector('english', name || ' ' || description)
+  @@ to_tsquery('english', 'search query')
+ORDER BY ts_rank(to_tsvector(...), to_tsquery(...)) DESC
+```
+
+### Autocomplete
+- Fuzzy matching on product names
+- Category name matching
+- Maximum 5 product results + 3 category results
+- Debounced to reduce API calls (300ms)
+
+---
+
+## Filtering Logic
+
+### Price Range
+```typescript
+{
+  minPrice?: number
+  maxPrice?: number
+}
+
+// SQL: WHERE price >= minPrice AND price <= maxPrice
+```
+
+### Category
+```typescript
+{
+  categoryId: string
+}
+
+// SQL: WHERE categoryId = ? OR parentCategoryId = ?
+// (includes subcategories)
+```
+
+### Stock Availability
+```typescript
+{
+  inStock: boolean // default: true
+}
+
+// SQL: WHERE stock > 0
+```
+
+---
+
+## Sorting Options
+
+- `price_asc`: Price low to high
+- `price_desc`: Price high to low
+- `name`: Alphabetical (A-Z)
+- `newest`: Most recently added
+- `popular`: Most purchased (requires order aggregation)
+- `rating`: Highest rated (requires review aggregation)
+
+---
+
+## Related Products Algorithm
+
+For product detail page:
+1. Same category products
+2. Price range ±20%
+3. Exclude current product
+4. Limit: 4 products
+5. Order by: popularity or rating
+
+---
+
+## Error Codes
+
+### SLUG_EXISTS
+Product/category slug already in use.
+
+### CIRCULAR_REFERENCE
+Category parent reference would create a circular loop.
+
+### HAS_ACTIVE_ORDERS
+Cannot delete product with existing unfulfilled orders.
+
+---
+
+## Usage Examples
+
+### Fetch Products (Server Component)
+```typescript
+// app/(shop)/products/page.tsx
+import { getProducts } from '@/services/products'
+
+export default async function ProductsPage({ searchParams }) {
+  const products = await getProducts({
+    page: searchParams.page || 1,
+    categoryId: searchParams.category,
+    sortBy: searchParams.sort || 'newest'
+  })
+
+  return <ProductGrid products={products.data} />
+}
+```
+
+### Product Detail (Server Component with ISR)
+```typescript
+// app/(shop)/products/[slug]/page.tsx
+export const revalidate = 60 // ISR: 60 seconds
+
+export default async function ProductPage({ params }) {
+  const product = await getProductBySlug(params.slug)
+
+  if (!product) notFound()
+
+  return <ProductDetail product={product} />
+}
+```
+
+### Search Autocomplete (Client Component)
+```typescript
+'use client'
+
+import { useState } from 'react'
+import { useDebounce } from '@/hooks/use-debounce'
+
+function SearchBar() {
+  const [query, setQuery] = useState('')
+  const debouncedQuery = useDebounce(query, 300)
+
+  useEffect(() => {
+    if (debouncedQuery.length >= 2) {
+      fetch(`/api/search/autocomplete?q=${debouncedQuery}`)
+        .then(res => res.json())
+        .then(setResults)
+    }
+  }, [debouncedQuery])
+
+  return <input onChange={(e) => setQuery(e.target.value)} />
+}
+```

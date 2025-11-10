@@ -1,0 +1,528 @@
+# Shopping Cart Contracts
+
+## Server Actions
+
+### addToCart
+Add a product to the shopping cart.
+
+**File**: `actions/cart.ts`
+**Authorization**: Public (works for guest and authenticated users)
+
+```typescript
+async function addToCart(data: AddToCartInput): Promise<CartResult>
+
+Input:
+  productId: string
+  variantId?: string
+  quantity: number (min: 1, max: 99, default: 1)
+
+Output (Success):
+  success: true
+  cart: {
+    id: string
+    items: CartItem[]
+    subtotal: number
+    itemCount: number
+  }
+
+Output (Error):
+  success: false
+  error: {
+    code: "NOT_FOUND" | "OUT_OF_STOCK" | "INSUFFICIENT_STOCK" | "INVALID_QUANTITY"
+    message: string
+  }
+```
+
+**Business Logic**:
+- If item already in cart, increase quantity
+- Check stock availability before adding
+- Create cart if user doesn't have one
+- For guests, use session ID to identify cart
+- For authenticated users, merge guest cart on login
+
+**Side Effects**:
+- Revalidates `/cart` page
+- Updates Zustand cart store
+
+---
+
+### updateCartItem
+Update quantity of an item in cart.
+
+**File**: `actions/cart.ts`
+**Authorization**: Public
+
+```typescript
+async function updateCartItem(itemId: string, quantity: number): Promise<CartResult>
+
+Input:
+  itemId: string (cart item ID)
+  quantity: number (min: 0, max: 99)
+
+Output (Success):
+  success: true
+  cart: Cart
+
+Output (Error):
+  success: false
+  error: {
+    code: "NOT_FOUND" | "INSUFFICIENT_STOCK" | "INVALID_QUANTITY"
+    message: string
+  }
+```
+
+**Business Logic**:
+- If quantity is 0, remove item from cart
+- Check stock availability before updating
+- Recalculate cart totals
+
+**Side Effects**:
+- Revalidates `/cart` page
+- Updates Zustand cart store
+
+---
+
+### removeFromCart
+Remove an item from cart.
+
+**File**: `actions/cart.ts`
+**Authorization**: Public
+
+```typescript
+async function removeFromCart(itemId: string): Promise<CartResult>
+
+Input:
+  itemId: string
+
+Output (Success):
+  success: true
+  cart: Cart
+
+Output (Error):
+  success: false
+  error: {
+    code: "NOT_FOUND"
+    message: string
+  }
+```
+
+**Side Effects**:
+- Revalidates `/cart` page
+- Updates Zustand cart store
+
+---
+
+### getCart
+Fetch current user's cart (Server Component).
+
+**File**: `services/cart.ts`
+**Authorization**: Public
+
+```typescript
+async function getCart(userId?: string, sessionId?: string): Promise<Cart | null>
+
+Input:
+  userId?: string (for authenticated users)
+  sessionId?: string (for guest users)
+
+Output:
+  {
+    id: string
+    items: Array<{
+      id: string
+      product: {
+        id: string
+        name: string
+        slug: string
+        price: number
+        images: string[]
+        stock: number
+        isActive: boolean
+      }
+      variant?: {
+        id: string
+        variantType: string
+        variantValue: string
+        priceAdjustment: number
+        stock: number
+      }
+      quantity: number
+      priceSnapshot: number
+      lineTotal: number
+    }>
+    subtotal: number
+    itemCount: number
+    createdAt: string
+    updatedAt: string
+  } | null
+```
+
+---
+
+### applyPromoCode
+Apply a promotional discount code to cart.
+
+**File**: `actions/cart.ts`
+**Authorization**: Public
+
+```typescript
+async function applyPromoCode(code: string): Promise<PromoResult>
+
+Input:
+  code: string (uppercase, alphanumeric)
+
+Output (Success):
+  success: true
+  promo: {
+    code: string
+    discountType: "PERCENTAGE" | "FIXED"
+    discountValue: number
+    discountAmount: number
+  }
+  cart: {
+    subtotal: number
+    discountAmount: number
+    total: number
+  }
+
+Output (Error):
+  success: false
+  error: {
+    code: "INVALID_CODE" | "CODE_EXPIRED" | "USAGE_LIMIT_EXCEEDED" | "MIN_PURCHASE_NOT_MET"
+    message: string
+  }
+```
+
+**Validation**:
+- Check code exists and is active
+- Check not expired
+- Check usage limits (total and per-user)
+- Check minimum purchase amount requirement
+- Check cart subtotal meets minimum
+
+**Discount Calculation**:
+- Percentage: `subtotal * (discountValue / 100)`
+- Fixed: `min(discountValue, subtotal)`
+- Apply maxDiscount cap if set
+
+---
+
+### removePromoCode
+Remove applied promo code from cart.
+
+**File**: `actions/cart.ts`
+**Authorization**: Public
+
+```typescript
+async function removePromoCode(): Promise<CartResult>
+
+Output (Success):
+  success: true
+  cart: Cart
+```
+
+---
+
+### mergeGuestCart
+Merge guest cart with user cart on login.
+
+**File**: `services/cart.ts`
+**Authorization**: Authenticated (internal use)
+
+```typescript
+async function mergeGuestCart(userId: string, sessionId: string): Promise<void>
+
+Input:
+  userId: string (logged in user)
+  sessionId: string (guest session)
+
+Behavior:
+  1. Fetch guest cart by sessionId
+  2. Fetch user cart by userId
+  3. Merge items (combine quantities if same product)
+  4. Delete guest cart
+  5. Update user cart
+```
+
+**Merge Logic**:
+- If item exists in both carts, add quantities together
+- Keep price snapshot from guest cart (most recent)
+- Check stock availability during merge
+
+---
+
+### clearCart
+Clear all items from cart.
+
+**File**: `actions/cart.ts`
+**Authorization**: Public
+
+```typescript
+async function clearCart(): Promise<Result>
+
+Output (Success):
+  success: true
+  message: "Cart cleared"
+```
+
+**Usage**: Called after successful order creation
+
+---
+
+## Cart State Management
+
+### Client-Side Store (Zustand)
+```typescript
+// store/cart-store.ts
+interface CartStore {
+  items: CartItem[]
+  itemCount: number
+  subtotal: number
+  discountAmount: number
+  promoCode: string | null
+
+  // Actions
+  addItem: (item: Product, quantity: number) => Promise<void>
+  updateQuantity: (itemId: string, quantity: number) => Promise<void>
+  removeItem: (itemId: string) => Promise<void>
+  applyPromo: (code: string) => Promise<void>
+  removePromo: () => Promise<void>
+  sync: () => Promise<void> // Sync with server
+}
+```
+
+### Persistence
+- **Guest Users**: localStorage (`cart-storage` key)
+- **Authenticated Users**: Database (PostgreSQL)
+- **Sync**: On login, merge localStorage cart with database cart
+
+---
+
+## Cart Calculations
+
+### Subtotal
+```typescript
+subtotal = sum(item.quantity * item.priceSnapshot for each item)
+```
+
+### Discount Amount
+```typescript
+if (promoCode.discountType === 'PERCENTAGE') {
+  discountAmount = subtotal * (promoCode.discountValue / 100)
+  if (promoCode.maxDiscount) {
+    discountAmount = min(discountAmount, promoCode.maxDiscount)
+  }
+} else if (promoCode.discountType === 'FIXED') {
+  discountAmount = min(promoCode.discountValue, subtotal)
+}
+```
+
+### Total (for display, before checkout)
+```typescript
+total = subtotal - discountAmount
+// Note: Taxes and shipping calculated at checkout
+```
+
+---
+
+## Stock Validation
+
+Before any cart operation (add, update), validate stock:
+
+```typescript
+async function validateStock(productId: string, variantId?: string, quantity: number): Promise<boolean> {
+  const item = variantId
+    ? await prisma.productVariant.findUnique({ where: { id: variantId } })
+    : await prisma.product.findUnique({ where: { id: productId } })
+
+  return item && item.stock >= quantity
+}
+```
+
+**Error Messages**:
+- `OUT_OF_STOCK`: "This item is currently out of stock"
+- `INSUFFICIENT_STOCK`: "Only {stock} items available"
+
+---
+
+## Price Snapshots
+
+When adding to cart, store current price:
+
+```typescript
+const currentPrice = variant
+  ? product.price + variant.priceAdjustment
+  : product.price
+
+await prisma.cartItem.create({
+  data: {
+    cartId,
+    productId,
+    variantId,
+    quantity,
+    priceSnapshot: currentPrice // Preserve price at time of add
+  }
+})
+```
+
+**Rationale**: Protects against price changes after adding to cart
+
+---
+
+## Cart Abandonment Tracking
+
+Track abandoned carts for marketing:
+
+```typescript
+// Check carts not updated in 24 hours with items
+const abandonedCarts = await prisma.cart.findMany({
+  where: {
+    updatedAt: { lt: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+    items: { some: {} },
+    userId: { not: null } // Only for registered users
+  },
+  include: { user: true, items: { include: { product: true } } }
+})
+
+// Send reminder email (background job)
+```
+
+---
+
+## Error Codes
+
+### NOT_FOUND
+Cart item or product not found.
+
+### OUT_OF_STOCK
+Product completely out of stock.
+
+### INSUFFICIENT_STOCK
+Requested quantity exceeds available stock.
+
+### INVALID_QUANTITY
+Quantity is invalid (< 1 or > 99).
+
+### INVALID_CODE
+Promo code does not exist or is inactive.
+
+### CODE_EXPIRED
+Promo code has expired.
+
+### USAGE_LIMIT_EXCEEDED
+Promo code usage limit reached.
+
+### MIN_PURCHASE_NOT_MET
+Cart subtotal doesn't meet promo code minimum.
+
+---
+
+## Optimistic Updates
+
+Client components implement optimistic updates for better UX:
+
+```typescript
+'use client'
+
+function CartItem({ item }) {
+  const updateQuantity = async (newQuantity: number) => {
+    // Optimistic update
+    setLocalQuantity(newQuantity)
+
+    try {
+      // Server update
+      await updateCartItem(item.id, newQuantity)
+    } catch (error) {
+      // Rollback on error
+      setLocalQuantity(item.quantity)
+      toast.error('Failed to update quantity')
+    }
+  }
+
+  return (
+    <input
+      value={localQuantity}
+      onChange={(e) => updateQuantity(Number(e.target.value))}
+    />
+  )
+}
+```
+
+---
+
+## Usage Examples
+
+### Add to Cart (Server Action)
+```typescript
+'use client'
+
+import { addToCart } from '@/actions/cart'
+import { useRouter } from 'next/navigation'
+
+function AddToCartButton({ productId }: { productId: string }) {
+  const router = useRouter()
+
+  async function handleAddToCart() {
+    const result = await addToCart({
+      productId,
+      quantity: 1
+    })
+
+    if (result.success) {
+      toast.success('Added to cart')
+      router.refresh() // Refresh cart count
+    } else {
+      toast.error(result.error.message)
+    }
+  }
+
+  return <button onClick={handleAddToCart}>Add to Cart</button>
+}
+```
+
+### Get Cart (Server Component)
+```typescript
+// app/(shop)/cart/page.tsx
+import { getCart } from '@/services/cart'
+import { getServerSession } from 'next-auth'
+
+export default async function CartPage() {
+  const session = await getServerSession()
+  const cart = await getCart(session?.user?.id)
+
+  if (!cart || cart.items.length === 0) {
+    return <EmptyCart />
+  }
+
+  return <CartView cart={cart} />
+}
+```
+
+### Update Quantity (Client Component)
+```typescript
+'use client'
+
+import { updateCartItem } from '@/actions/cart'
+
+function QuantitySelector({ itemId, currentQuantity }) {
+  async function handleUpdate(newQuantity: number) {
+    if (newQuantity === 0) {
+      // Remove item
+      await removeFromCart(itemId)
+    } else {
+      await updateCartItem(itemId, newQuantity)
+    }
+  }
+
+  return (
+    <select
+      value={currentQuantity}
+      onChange={(e) => handleUpdate(Number(e.target.value))}
+    >
+      {[1, 2, 3, 4, 5].map(num => (
+        <option key={num} value={num}>{num}</option>
+      ))}
+    </select>
+  )
+}
+```

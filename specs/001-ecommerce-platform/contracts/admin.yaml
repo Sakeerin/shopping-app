@@ -1,0 +1,147 @@
+# Admin Dashboard Contracts
+
+## Server Actions & Services
+
+### getDashboardMetrics
+Fetch key metrics for admin dashboard home.
+
+**File**: `services/analytics.ts`
+**Authorization**: Admin
+
+```typescript
+async function getDashboardMetrics(dateRange?: DateRange): Promise<DashboardMetrics>
+
+Output:
+  {
+    totalRevenue: number
+    totalOrders: number
+    totalCustomers: number
+    totalProducts: number
+    revenueChange: number // % change vs previous period
+    ordersChange: number
+    customersChange: number
+    recentOrders: Order[] // Last 5 orders
+    topProducts: Array<{
+      product: Product
+      salesCount: number
+      revenue: number
+    }>
+    salesByDay: Array<{ date: string, revenue: number, orders: number }>
+  }
+```
+
+---
+
+### createPromoCode
+Create promotional discount code.
+
+**File**: `actions/admin.ts`
+**Authorization**: Admin
+
+```typescript
+async function createPromoCode(data: PromoCodeInput): Promise<PromoCodeResult>
+
+Input:
+  code: string (unique, uppercase)
+  discountType: "PERCENTAGE" | "FIXED"
+  discountValue: number
+  minPurchase?: number
+  maxDiscount?: number
+  usageLimit?: number
+  perUserLimit?: number
+  startDate: string
+  endDate?: string
+```
+
+---
+
+### updatePromoCode
+Update existing promo code.
+
+**File**: `actions/admin.ts`
+**Authorization**: Admin
+
+```typescript
+async function updatePromoCode(id: string, data: Partial<PromoCodeInput>): Promise<PromoCodeResult>
+```
+
+---
+
+### deactivatePromoCode
+Deactivate promo code (soft delete).
+
+**File**: `actions/admin.ts`
+**Authorization**: Admin
+
+```typescript
+async function deactivatePromoCode(id: string): Promise<Result>
+```
+
+---
+
+### getCustomers
+Fetch customer list with filters.
+
+**File**: `services/analytics.ts`
+**Authorization**: Admin
+
+```typescript
+async function getCustomers(params?: CustomerFilters): Promise<CustomerList>
+
+Input:
+  page?: number
+  limit?: number
+  search?: string (name, email)
+  sortBy?: "newest" | "orders" | "revenue"
+
+Output:
+  data: Array<{
+    id: string
+    name: string
+    email: string
+    createdAt: string
+    orderCount: number
+    totalSpent: number
+    lastOrderDate?: string
+  }>
+  pagination: PaginationMeta
+```
+
+---
+
+### getSalesReport
+Generate sales report for date range.
+
+**File**: `services/analytics.ts`
+**Authorization**: Admin
+
+```typescript
+async function getSalesReport(startDate: Date, endDate: Date): Promise<SalesReport>
+
+Output:
+  {
+    totalRevenue: number
+    totalOrders: number
+    averageOrderValue: number
+    productsSold: number
+    topProducts: Product[]
+    topCategories: Category[]
+    revenueByDay: TimeSeriesData[]
+    ordersByStatus: StatusBreakdown
+  }
+```
+
+---
+
+## Usage Notes
+
+All admin endpoints/actions require admin role verification:
+
+```typescript
+const session = await getServerSession()
+if (session?.user?.role !== 'ADMIN') {
+  throw new Error('Unauthorized')
+}
+```
+
+Admin UI components are only accessible at `/admin/*` routes with middleware protection.
