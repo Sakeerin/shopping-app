@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db';
 import { createPaymentIntent } from '@/lib/stripe';
+import { sendOrderConfirmation } from '@/lib/email';
 import { TAX_RATE, FLAT_SHIPPING_RATE, FREE_SHIPPING_THRESHOLD } from '@/lib/constants';
 import type { CreateOrderInput, OrderData, CartSummary } from '@/types/order';
 import { clearCart } from './cart';
@@ -59,7 +60,7 @@ export async function calculateOrderTotals(
 export async function createOrder(input: CreateOrderInput): Promise<OrderData> {
   const { cartId, shippingAddress, billingAddress, promoCode, notes } = input;
 
-  // Fetch cart with items
+  // Fetch cart with items and user
   const cart = await prisma.cart.findUnique({
     where: { id: cartId },
     include: {
@@ -69,6 +70,7 @@ export async function createOrder(input: CreateOrderInput): Promise<OrderData> {
           variant: true,
         },
       },
+      user: true,
     },
   });
 
@@ -178,6 +180,54 @@ export async function createOrder(input: CreateOrderInput): Promise<OrderData> {
   const orderData = await getOrderById(order.id);
   if (!orderData) {
     throw new Error('Failed to retrieve order');
+  }
+
+  // Send order confirmation email
+  const customerEmail = cart.user?.email || order.userEmail;
+  const customerName = cart.user?.name || shippingAddress.fullName;
+
+  if (customerEmail) {
+    try {
+      await sendOrderConfirmation({
+        email: customerEmail,
+        customerName,
+        orderData: {
+          orderNumber: orderData.orderNumber,
+          orderDate: orderData.createdAt.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+          }),
+          customerName,
+          items: orderData.items.map((item) => ({
+            id: item.id,
+            productName: item.productName,
+            productImage: item.productImage,
+            productSlug: item.productSlug,
+            quantity: item.quantity,
+            price: item.price,
+            lineTotal: item.lineTotal,
+            variantDetails: item.variantDetails || undefined,
+          })),
+          subtotal: orderData.subtotal,
+          taxAmount: orderData.taxAmount,
+          shippingCost: orderData.shippingCost,
+          discountAmount: orderData.discountAmount,
+          totalAmount: orderData.totalAmount,
+          shippingAddress: orderData.shippingAddress,
+          estimatedDelivery: orderData.estimatedDelivery
+            ? orderData.estimatedDelivery.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+              })
+            : undefined,
+        },
+      });
+    } catch (emailError) {
+      // Log error but don't fail the order creation
+      console.error('Failed to send order confirmation email:', emailError);
+    }
   }
 
   return orderData;

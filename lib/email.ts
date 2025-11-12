@@ -1,4 +1,8 @@
 import { Resend } from 'resend';
+import { render } from '@react-email/render';
+import OrderConfirmationEmail, {
+  type OrderConfirmationEmailProps,
+} from '@/emails/order-confirmation';
 
 if (!process.env.RESEND_API_KEY) {
   throw new Error('RESEND_API_KEY is not set in environment variables');
@@ -30,19 +34,57 @@ export async function sendWelcomeEmail({ name, email }: WelcomeEmailProps) {
   });
 }
 
-interface OrderConfirmationEmailProps {
+// ============================================================================
+// ORDER CONFIRMATION EMAIL (Using React Email Template)
+// ============================================================================
+
+interface SendOrderConfirmationParams {
+  email: string;
+  customerName: string;
+  orderData: OrderConfirmationEmailProps;
+}
+
+export async function sendOrderConfirmation({
+  email,
+  customerName,
+  orderData,
+}: SendOrderConfirmationParams) {
+  try {
+    // Render the React Email template to HTML
+    const emailHtml = render(OrderConfirmationEmail(orderData));
+
+    // Send the email using Resend
+    const result = await resend.emails.send({
+      from: fromEmail,
+      to: email,
+      subject: `Order Confirmation - ${orderData.orderNumber}`,
+      html: emailHtml,
+    });
+
+    return { success: true, data: result };
+  } catch (error: any) {
+    console.error('Failed to send order confirmation email:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+// Legacy function for backward compatibility (deprecated - use sendOrderConfirmation instead)
+interface LegacyOrderConfirmationEmailProps {
   email: string;
   orderNumber: string;
   totalAmount: number;
   items: Array<{ name: string; quantity: number; price: number }>;
 }
 
+/**
+ * @deprecated Use sendOrderConfirmation with the React Email template instead
+ */
 export async function sendOrderConfirmationEmail({
   email,
   orderNumber,
   totalAmount,
   items,
-}: OrderConfirmationEmailProps) {
+}: LegacyOrderConfirmationEmailProps) {
   const itemsHtml = items
     .map(
       (item) =>

@@ -117,63 +117,63 @@ Next.js 15 App Router structure:
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T048 [P] [US1] Unit test for getProducts service in `tests/unit/services/products.test.ts`
-- [ ] T049 [P] [US1] Unit test for getProductBySlug service in `tests/unit/services/products.test.ts`
-- [ ] T050 [P] [US1] Unit test for addToCart service in `tests/unit/services/cart.test.ts`
-- [ ] T051 [P] [US1] Unit test for checkout service in `tests/unit/services/orders.test.ts`
-- [ ] T052 [P] [US1] Component test for ProductCard in `tests/component/products/product-card.test.tsx`
-- [ ] T053 [P] [US1] Component test for AddToCartButton in `tests/component/cart/add-to-cart-button.test.tsx`
-- [ ] T054 [P] [US1] Integration test for complete checkout flow in `tests/integration/checkout-flow.test.ts`
-- [ ] T055 [P] [US1] E2E test for purchase journey in `tests/e2e/purchase-flow.spec.ts`
+- [X] T048 [P] [US1] Unit test for getProducts service in `tests/unit/services/products.test.ts`
+- [X] T049 [P] [US1] Unit test for getProductBySlug service in `tests/unit/services/products.test.ts`
+- [X] T050 [P] [US1] Unit test for addToCart service in `tests/unit/services/cart.test.ts`
+- [X] T051 [P] [US1] Unit test for checkout service in `tests/unit/services/orders.test.ts`
+- [X] T052 [P] [US1] Component test for ProductCard in `tests/component/products/product-card.test.tsx`
+- [X] T053 [P] [US1] Component test for AddToCartButton in `tests/component/cart/add-to-cart-button.test.tsx`
+- [X] T054 [P] [US1] Integration test for complete checkout flow in `tests/integration/checkout-flow.test.ts`
+- [X] T055 [P] [US1] E2E test for purchase journey in `tests/e2e/purchase-flow.spec.ts`
 
 ### Data Layer for User Story 1
 
-- [ ] T056 [P] [US1] Create Product type definitions in `types/product.ts`
-- [ ] T057 [P] [US1] Create Cart type definitions in `types/cart.ts`
-- [ ] T058 [P] [US1] Create Order type definitions in `types/order.ts`
+- [X] T056 [P] [US1] Create Product type definitions in `types/product.ts`
+- [X] T057 [P] [US1] Create Cart type definitions in `types/cart.ts`
+- [X] T058 [P] [US1] Create Order type definitions in `types/order.ts`
 
 ### Services for User Story 1
 
-- [ ] T059 [P] [US1] Implement getProducts service in `services/products.ts` (fetch paginated product list)
-- [ ] T060 [P] [US1] Implement getProductBySlug service in `services/products.ts` (fetch product details)
-- [ ] T061 [P] [US1] Implement getCategories service in `services/products.ts` (fetch category tree)
-- [ ] T062 [US1] Implement cart service in `services/cart.ts` (getCart, addToCart, updateCartItem, removeFromCart)
-- [ ] T063 [US1] Implement checkout service in `services/orders.ts` (createOrder, validateStock, calculateTotals)
+- [X] T059 [P] [US1] Implement getProducts service in `services/products.ts` (fetch paginated product list)
+- [X] T060 [P] [US1] Implement getProductBySlug service in `services/products.ts` (fetch product details)
+- [X] T061 [P] [US1] Implement getCategories service in `services/products.ts` (fetch category tree)
+- [X] T062 [US1] Implement cart service in `services/cart.ts` (getCart, addToCart, updateCartItem, removeFromCart)
+- [X] T063 [US1] Implement checkout service in `services/orders.ts` (createOrder, validateStock, calculateTotals)
 
 ### Server Actions for User Story 1
 
-- [ ] T064 [P] [US1] Create addToCart Server Action in `actions/cart.ts` with stock validation
-- [ ] T065 [P] [US1] Create updateCartItem Server Action in `actions/cart.ts` with quantity validation
-- [ ] T066 [P] [US1] Create removeFromCart Server Action in `actions/cart.ts`
-- [ ] T067 [US1] Create createOrder Server Action in `actions/checkout.ts` with Stripe Payment Intent
+- [X] T064 [P] [US1] Create addToCart Server Action in `actions/cart.ts` with stock validation
+- [X] T065 [P] [US1] Create updateCartItem Server Action in `actions/cart.ts` with quantity validation
+- [X] T066 [P] [US1] Create removeFromCart Server Action in `actions/cart.ts`
+- [X] T067 [US1] Create createOrder Server Action in `actions/checkout.ts` with Stripe Payment Intent
 
 ### UI Components for User Story 1
 
-- [ ] T068 [P] [US1] Create ProductCard component in `components/products/product-card.tsx` (Server Component)
-- [ ] T069 [P] [US1] Create ProductGrid component in `components/products/product-grid.tsx` (Server Component)
-- [ ] T070 [P] [US1] Create ProductGallery component in `components/products/product-gallery.tsx` (Client Component with image carousel)
-- [ ] T071 [P] [US1] Create AddToCartButton component in `components/products/add-to-cart-button.tsx` (Client Component)
-- [ ] T072 [P] [US1] Create CartItem component in `components/cart/cart-item.tsx` (Client Component with quantity controls)
-- [ ] T073 [P] [US1] Create CartSummary component in `components/cart/cart-summary.tsx` (displays totals)
-- [ ] T074 [P] [US1] Create CheckoutForm component in `components/cart/checkout-form.tsx` (Client Component with Stripe Elements)
+- [X] T068 [P] [US1] Create ProductCard component in `components/products/product-card.tsx` (Server Component)
+- [X] T069 [P] [US1] Create ProductGrid component in `components/products/product-grid.tsx` (Server Component)
+- [X] T070 [P] [US1] Create ProductGallery component in `components/products/product-gallery.tsx` (Client Component with image carousel)
+- [X] T071 [P] [US1] Create AddToCartButton component in `components/products/add-to-cart-button.tsx` (Client Component)
+- [X] T072 [P] [US1] Create CartItem component in `components/cart/cart-item.tsx` (Client Component with quantity controls)
+- [X] T073 [P] [US1] Create CartSummary component in `components/cart/cart-summary.tsx` (displays totals)
+- [X] T074 [P] [US1] Create CheckoutForm component in `components/cart/checkout-form.tsx` (Client Component with Stripe Elements)
 
 ### Pages for User Story 1
 
-- [ ] T075 [US1] Create homepage in `app/(shop)/page.tsx` (Server Component, fetch featured products)
-- [ ] T076 [US1] Create product listing page in `app/(shop)/products/page.tsx` (Server Component, ISR with revalidate: 60)
-- [ ] T077 [US1] Create product detail page in `app/(shop)/products/[slug]/page.tsx` (Server Component, ISR, dynamic metadata)
-- [ ] T078 [US1] Create cart page in `app/(shop)/cart/page.tsx` (Server Component, fetch cart data)
-- [ ] T079 [US1] Create checkout page in `app/(shop)/checkout/page.tsx` (Server Component with Stripe integration)
-- [ ] T080 [US1] Create order confirmation page in `app/(shop)/orders/[id]/page.tsx` (Server Component, display order details)
+- [X] T075 [US1] Create homepage in `app/(shop)/page.tsx` (Server Component, fetch featured products)
+- [X] T076 [US1] Create product listing page in `app/(shop)/products/page.tsx` (Server Component, ISR with revalidate: 60)
+- [X] T077 [US1] Create product detail page in `app/(shop)/products/[slug]/page.tsx` (Server Component, ISR, dynamic metadata)
+- [X] T078 [US1] Create cart page in `app/(shop)/cart/page.tsx` (Server Component, fetch cart data)
+- [X] T079 [US1] Create checkout page in `app/(shop)/checkout/page.tsx` (Server Component with Stripe integration)
+- [X] T080 [US1] Create order confirmation page in `app/(shop)/orders/[id]/page.tsx` (Server Component, display order details)
 
 ### State Management for User Story 1
 
-- [ ] T081 [US1] Create cart Zustand store in `store/cart-store.ts` with localStorage persistence
+- [X] T081 [US1] Create cart Zustand store in `store/cart-store.ts` with localStorage persistence
 
 ### Email Templates for User Story 1
 
-- [ ] T082 [P] [US1] Create order confirmation email template in `emails/order-confirmation.tsx` using React Email
-- [ ] T083 [P] [US1] Implement sendOrderConfirmation function in `lib/email.ts`
+- [X] T082 [P] [US1] Create order confirmation email template in `emails/order-confirmation.tsx` using React Email
+- [X] T083 [P] [US1] Implement sendOrderConfirmation function in `lib/email.ts`
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently. Customers can browse products and complete purchases.
 

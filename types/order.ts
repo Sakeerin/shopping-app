@@ -81,3 +81,12 @@ export type OrderSummary = {
   itemCount: number;
   createdAt: Date;
 };
+
+export type CartSummary = {
+  subtotal: number;
+  tax: number;
+  shipping: number;
+  discount: number;
+  total: number;
+  itemCount: number;
+};
