@@ -187,52 +187,52 @@ Next.js 15 App Router structure:
 
 ### Tests for User Story 2 (TDD - Write FIRST)
 
-- [ ] T084 [P] [US2] Unit test for registerUser action in `tests/unit/actions/auth.test.ts`
-- [ ] T085 [P] [US2] Unit test for updateProfile action in `tests/unit/actions/profile.test.ts`
-- [ ] T086 [P] [US2] Component test for LoginForm in `tests/component/auth/login-form.test.tsx`
-- [ ] T087 [P] [US2] Component test for RegisterForm in `tests/component/auth/register-form.test.tsx`
-- [ ] T088 [P] [US2] E2E test for user registration flow in `tests/e2e/user-registration.spec.ts`
+- [X] T084 [P] [US2] Unit test for registerUser action in `tests/unit/actions/auth.test.ts`
+- [X] T085 [P] [US2] Unit test for updateProfile action in `tests/unit/actions/profile.test.ts`
+- [X] T086 [P] [US2] Component test for LoginForm in `tests/component/auth/login-form.test.tsx`
+- [X] T087 [P] [US2] Component test for RegisterForm in `tests/component/auth/register-form.test.tsx`
+- [X] T088 [P] [US2] E2E test for user registration flow in `tests/e2e/user-registration.spec.ts`
 
 ### Server Actions for User Story 2
 
-- [ ] T089 [P] [US2] Create registerUser Server Action in `actions/auth.ts` (hash password with bcrypt, create user)
-- [ ] T090 [P] [US2] Create requestPasswordReset Server Action in `actions/auth.ts` (generate token, send email)
-- [ ] T091 [P] [US2] Create resetPassword Server Action in `actions/auth.ts` (validate token, update password)
-- [ ] T092 [P] [US2] Create updateProfile Server Action in `actions/profile.ts` (update name, email, password)
-- [ ] T093 [P] [US2] Create addAddress Server Action in `actions/profile.ts` (save shipping address)
-- [ ] T094 [P] [US2] Create updateAddress Server Action in `actions/profile.ts`
-- [ ] T095 [P] [US2] Create deleteAddress Server Action in `actions/profile.ts`
-- [ ] T096 [P] [US2] Create setDefaultAddress Server Action in `actions/profile.ts`
+- [X] T089 [P] [US2] Create registerUser Server Action in `actions/auth.ts` (hash password with bcrypt, create user)
+- [X] T090 [P] [US2] Create requestPasswordReset Server Action in `actions/auth.ts` (generate token, send email)
+- [X] T091 [P] [US2] Create resetPassword Server Action in `actions/auth.ts` (validate token, update password)
+- [X] T092 [P] [US2] Create updateProfile Server Action in `actions/profile.ts` (update name, email, password)
+- [X] T093 [P] [US2] Create addAddress Server Action in `actions/profile.ts` (save shipping address)
+- [X] T094 [P] [US2] Create updateAddress Server Action in `actions/profile.ts`
+- [X] T095 [P] [US2] Create deleteAddress Server Action in `actions/profile.ts`
+- [X] T096 [P] [US2] Create setDefaultAddress Server Action in `actions/profile.ts`
 
 ### Services for User Story 2
 
-- [ ] T097 [P] [US2] Implement getOrdersByUser service in `services/orders.ts` (fetch user order history)
-- [ ] T098 [P] [US2] Implement getUserAddresses service in `services/users.ts`
+- [X] T097 [P] [US2] Implement getOrdersByUser service in `services/orders.ts` (fetch user order history)
+- [X] T098 [P] [US2] Implement getUserAddresses service in `services/users.ts`
 
 ### UI Components for User Story 2
 
-- [ ] T099 [P] [US2] Create LoginForm component in `components/auth/login-form.tsx` (Client Component with React Hook Form + Zod)
-- [ ] T100 [P] [US2] Create RegisterForm component in `components/auth/register-form.tsx` (Client Component)
-- [ ] T101 [P] [US2] Create OAuthButtons component in `components/auth/oauth-buttons.tsx` (Google, GitHub sign-in)
-- [ ] T102 [P] [US2] Create PasswordResetForm component in `components/auth/password-reset-form.tsx`
-- [ ] T103 [P] [US2] Create ProfileForm component in `components/profile/profile-form.tsx` (Client Component)
-- [ ] T104 [P] [US2] Create AddressForm component in `components/profile/address-form.tsx` (Client Component)
-- [ ] T105 [P] [US2] Create OrderCard component in `components/orders/order-card.tsx` (display order summary)
+- [X] T099 [P] [US2] Create LoginForm component in `components/auth/login-form.tsx` (Client Component with React Hook Form + Zod)
+- [X] T100 [P] [US2] Create RegisterForm component in `components/auth/register-form.tsx` (Client Component)
+- [X] T101 [P] [US2] Create OAuthButtons component in `components/auth/oauth-buttons.tsx` (Google, GitHub sign-in)
+- [X] T102 [P] [US2] Create PasswordResetForm component in `components/auth/password-reset-form.tsx`
+- [X] T103 [P] [US2] Create ProfileForm component in `components/profile/profile-form.tsx` (Client Component)
+- [X] T104 [P] [US2] Create AddressForm component in `components/profile/address-form.tsx` (Client Component)
+- [X] T105 [P] [US2] Create OrderCard component in `components/orders/order-card.tsx` (display order summary)
 
 ### Pages for User Story 2
 
-- [ ] T106 [US2] Create auth layout in `app/(auth)/layout.tsx` (minimal layout without nav)
-- [ ] T107 [US2] Create login page in `app/(auth)/login/page.tsx` (Server Component)
-- [ ] T108 [US2] Create register page in `app/(auth)/register/page.tsx` (Server Component)
-- [ ] T109 [US2] Create password reset request page in `app/(auth)/reset-password/page.tsx`
-- [ ] T110 [US2] Create profile page in `app/(shop)/profile/page.tsx` (Server Component, protected route)
-- [ ] T111 [US2] Create addresses page in `app/(shop)/profile/addresses/page.tsx` (Server Component, protected route)
-- [ ] T112 [US2] Create order history page in `app/(shop)/orders/page.tsx` (Server Component, protected route)
+- [X] T106 [US2] Create auth layout in `app/(auth)/layout.tsx` (minimal layout without nav)
+- [X] T107 [US2] Create login page in `app/(auth)/login/page.tsx` (Server Component)
+- [X] T108 [US2] Create register page in `app/(auth)/register/page.tsx` (Server Component)
+- [X] T109 [US2] Create password reset request page in `app/(auth)/reset-password/page.tsx`
+- [X] T110 [US2] Create profile page in `app/(shop)/profile/page.tsx` (Server Component, protected route)
+- [X] T111 [US2] Create addresses page in `app/(shop)/profile/addresses/page.tsx` (Server Component, protected route)
+- [X] T112 [US2] Create order history page in `app/(shop)/orders/page.tsx` (Server Component, protected route)
 
 ### Email Templates for User Story 2
 
-- [ ] T113 [P] [US2] Create password reset email template in `emails/password-reset.tsx`
-- [ ] T114 [P] [US2] Create welcome email template in `emails/welcome.tsx`
+- [X] T113 [P] [US2] Create password reset email template in `emails/password-reset.tsx`
+- [X] T114 [P] [US2] Create welcome email template in `emails/welcome.tsx`
 
 **Checkpoint**: User Story 1 AND 2 should both work independently. Users can register, login, and manage accounts.
 

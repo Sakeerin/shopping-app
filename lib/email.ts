@@ -3,6 +3,8 @@ import { render } from '@react-email/render';
 import OrderConfirmationEmail, {
   type OrderConfirmationEmailProps,
 } from '@/emails/order-confirmation';
+import WelcomeEmail from '@/emails/welcome';
+import PasswordResetEmail from '@/emails/password-reset';
 
 if (!process.env.RESEND_API_KEY) {
   throw new Error('RESEND_API_KEY is not set in environment variables');
@@ -22,16 +24,23 @@ interface WelcomeEmailProps {
 }
 
 export async function sendWelcomeEmail({ name, email }: WelcomeEmailProps) {
-  return await resend.emails.send({
-    from: fromEmail,
-    to: email,
-    subject: 'Welcome to Shopping App!',
-    html: `
-      <h1>Welcome ${name}!</h1>
-      <p>Thank you for creating an account with Shopping App.</p>
-      <p>Start shopping now and enjoy exclusive deals!</p>
-    `,
-  });
+  try {
+    // Render the React Email template to HTML
+    const emailHtml = await render(WelcomeEmail({ name }));
+
+    // Send the email using Resend
+    const result = await resend.emails.send({
+      from: fromEmail,
+      to: email,
+      subject: 'Welcome to ShopApp!',
+      html: emailHtml,
+    });
+
+    return { success: true, data: result };
+  } catch (error: any) {
+    console.error('Failed to send welcome email:', error);
+    return { success: false, error: error.message };
+  }
 }
 
 // ============================================================================
@@ -143,18 +152,23 @@ export async function sendPasswordResetEmail({
   resetToken,
   resetUrl,
 }: PasswordResetEmailProps) {
-  return await resend.emails.send({
-    from: fromEmail,
-    to: email,
-    subject: 'Reset Your Password',
-    html: `
-      <h1>Reset Your Password</h1>
-      <p>You requested to reset your password. Click the link below to create a new password:</p>
-      <p><a href="${resetUrl}?token=${resetToken}">Reset Password</a></p>
-      <p>This link will expire in 1 hour.</p>
-      <p>If you didn't request this, please ignore this email.</p>
-    `,
-  });
+  try {
+    // Render the React Email template to HTML
+    const emailHtml = await render(PasswordResetEmail({ resetUrl }));
+
+    // Send the email using Resend
+    const result = await resend.emails.send({
+      from: fromEmail,
+      to: email,
+      subject: 'Reset Your ShopApp Password',
+      html: emailHtml,
+    });
+
+    return { success: true, data: result };
+  } catch (error: any) {
+    console.error('Failed to send password reset email:', error);
+    return { success: false, error: error.message };
+  }
 }
 
 interface OrderCancelledEmailProps {
