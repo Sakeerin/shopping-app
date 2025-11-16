@@ -224,3 +224,188 @@ export async function clearCart(cartId: string): Promise<void> {
     where: { cartId },
   });
 }
+
+// ============================================================================
+// PROMO CODE SERVICES (T119-T121)
+// ============================================================================
+
+// T119: Validate promo code
+export async function validatePromoCode(
+  code: string,
+  userId: string | null,
+  subtotal: number
+): Promise<{ valid: boolean; error?: string; promoCode?: any }> {
+  const promoCode = await prisma.promoCode.findUnique({
+    where: { code: code.toUpperCase() },
+  });
+
+  if (!promoCode) {
+    return { valid: false, error: 'Invalid promo code' };
+  }
+
+  // Check if promo code is active
+  if (!promoCode.isActive) {
+    return { valid: false, error: 'This promo code is no longer active' };
+  }
+
+  // Check start date
+  const now = new Date();
+  if (promoCode.startDate > now) {
+    return { valid: false, error: 'This promo code is not yet valid' };
+  }
+
+  // Check end date
+  if (promoCode.endDate && promoCode.endDate < now) {
+    return { valid: false, error: 'This promo code has expired' };
+  }
+
+  // Check usage limit
+  if (
+    promoCode.usageLimit !== null &&
+    promoCode.usageCount >= promoCode.usageLimit
+  ) {
+    return { valid: false, error: 'This promo code has reached its usage limit' };
+  }
+
+  // Check per-user limit (if user is logged in)
+  if (userId && promoCode.perUserLimit !== null) {
+    const userUsageCount = await prisma.order.count({
+      where: {
+        userId,
+        promoCode: code.toUpperCase(),
+      },
+    });
+
+    if (userUsageCount >= promoCode.perUserLimit) {
+      return {
+        valid: false,
+        error: 'You have already used this promo code the maximum number of times',
+      };
+    }
+  }
+
+  // Check minimum purchase requirement
+  if (promoCode.minPurchase && Number(promoCode.minPurchase) > subtotal) {
+    return {
+      valid: false,
+      error: `Minimum purchase of $${Number(promoCode.minPurchase).toFixed(2)} required`,
+    };
+  }
+
+  return { valid: true, promoCode };
+}
+
+// T120: Calculate discount
+export function calculateDiscount(
+  subtotal: number,
+  promoCode: {
+    discountType: string;
+    discountValue: any;
+    maxDiscount: any;
+  }
+): number {
+  let discount = 0;
+
+  if (promoCode.discountType === 'PERCENTAGE') {
+    discount = (subtotal * Number(promoCode.discountValue)) / 100;
+
+    // Apply max discount cap if set
+    if (promoCode.maxDiscount) {
+      discount = Math.min(discount, Number(promoCode.maxDiscount));
+    }
+  } else if (promoCode.discountType === 'FIXED') {
+    discount = Math.min(Number(promoCode.discountValue), subtotal);
+  }
+
+  return Number(discount.toFixed(2));
+}
+
+// T121: Merge guest cart with user cart on login
+export async function mergeGuestCart(
+  guestSessionId: string,
+  userId: string
+): Promise<CartData | null> {
+  // Find guest cart
+  const guestCart = await prisma.cart.findFirst({
+    where: { sessionId: guestSessionId },
+    include: {
+      items: {
+        include: {
+          product: true,
+          variant: true,
+        },
+      },
+    },
+  });
+
+  if (!guestCart || guestCart.items.length === 0) {
+    return getCart(userId);
+  }
+
+  // Find or create user cart
+  let userCart = await prisma.cart.findFirst({
+    where: { userId },
+  });
+
+  if (!userCart) {
+    userCart = await prisma.cart.create({
+      data: { userId },
+    });
+  }
+
+  // Merge items
+  for (const guestItem of guestCart.items) {
+    // Check if product/variant combo already exists in user cart
+    const existingItem = await prisma.cartItem.findUnique({
+      where: {
+        cartId_productId_variantId: {
+          cartId: userCart.id,
+          productId: guestItem.productId,
+          variantId: guestItem.variantId || null,
+        },
+      },
+    });
+
+    // Check stock availability
+    const availableStock = guestItem.variant
+      ? guestItem.variant.stock
+      : guestItem.product.stock;
+
+    if (existingItem) {
+      // Combine quantities (respecting stock limits)
+      const newQuantity = Math.min(
+        existingItem.quantity + guestItem.quantity,
+        availableStock
+      );
+
+      await prisma.cartItem.update({
+        where: { id: existingItem.id },
+        data: { quantity: newQuantity },
+      });
+    } else {
+      // Add new item to user cart (respecting stock limits)
+      const quantity = Math.min(guestItem.quantity, availableStock);
+
+      await prisma.cartItem.create({
+        data: {
+          cartId: userCart.id,
+          productId: guestItem.productId,
+          variantId: guestItem.variantId,
+          quantity,
+          priceSnapshot: guestItem.priceSnapshot,
+        },
+      });
+    }
+  }
+
+  // Delete guest cart
+  await prisma.cartItem.deleteMany({
+    where: { cartId: guestCart.id },
+  });
+  await prisma.cart.delete({
+    where: { id: guestCart.id },
+  });
+
+  // Return merged cart
+  return getCart(userId);
+}

@@ -246,34 +246,34 @@ Next.js 15 App Router structure:
 
 ### Tests for User Story 4 (TDD - Write FIRST)
 
-- [ ] T115 [P] [US4] Unit test for applyPromoCode action in `tests/unit/actions/cart.test.ts`
-- [ ] T116 [P] [US4] Unit test for cart persistence in `tests/integration/cart-persistence.test.ts`
-- [ ] T117 [P] [US4] Component test for PromoCodeInput in `tests/component/cart/promo-code-input.test.tsx`
+- [x] T115 [P] [US4] Unit test for applyPromoCode action in `tests/unit/actions/cart.test.ts`
+- [x] T116 [P] [US4] Unit test for cart persistence in `tests/integration/cart-persistence.test.ts`
+- [x] T117 [P] [US4] Component test for PromoCodeInput in `tests/component/cart/promo-code-input.test.tsx`
 
 ### Data Layer for User Story 4
 
-- [ ] T118 [US4] Add PromoCode validation to Prisma schema (ensure all fields exist from data-model.md)
+- [x] T118 [US4] Add PromoCode validation to Prisma schema (ensure all fields exist from data-model.md)
 
 ### Services for User Story 4
 
-- [ ] T119 [P] [US4] Implement validatePromoCode service in `services/cart.ts` (check expiry, usage limits)
-- [ ] T120 [P] [US4] Implement calculateDiscount service in `services/cart.ts` (percentage vs fixed calculation)
-- [ ] T121 [US4] Implement mergeGuestCart service in `services/cart.ts` (merge on login)
+- [x] T119 [P] [US4] Implement validatePromoCode service in `services/cart.ts` (check expiry, usage limits)
+- [x] T120 [P] [US4] Implement calculateDiscount service in `services/cart.ts` (percentage vs fixed calculation)
+- [x] T121 [US4] Implement mergeGuestCart service in `services/cart.ts` (merge on login)
 
 ### Server Actions for User Story 4
 
-- [ ] T122 [P] [US4] Create applyPromoCode Server Action in `actions/cart.ts` with validation
-- [ ] T123 [P] [US4] Create removePromoCode Server Action in `actions/cart.ts`
+- [x] T122 [P] [US4] Create applyPromoCode Server Action in `actions/cart.ts` with validation
+- [x] T123 [P] [US4] Create removePromoCode Server Action in `actions/cart.ts`
 
 ### UI Components for User Story 4
 
-- [ ] T124 [P] [US4] Create PromoCodeInput component in `components/cart/promo-code-input.tsx` (Client Component with form handling)
-- [ ] T125 [P] [US4] Enhance CartSummary component to display discount breakdown
+- [x] T124 [P] [US4] Create PromoCodeInput component in `components/cart/promo-code-input.tsx` (Client Component with form handling)
+- [x] T125 [P] [US4] Enhance CartSummary component to display discount breakdown
 
 ### Integration
 
-- [ ] T126 [US4] Add cart persistence logic to cart store (sync with database for logged-in users)
-- [ ] T127 [US4] Implement cart merge logic on user login (merge guest cart with user cart)
+- [x] T126 [US4] Add cart persistence logic to cart store (sync with database for logged-in users)
+- [x] T127 [US4] Implement cart merge logic on user login (merge guest cart with user cart)
 
 **Checkpoint**: Advanced cart management working. Promo codes functional, cart persists across sessions.
 

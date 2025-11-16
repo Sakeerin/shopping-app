@@ -8,6 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Link from 'next/link';
 import { loginSchema } from '@/lib/validations';
+import { mergeGuestCart } from '@/actions/cart';
 
 // ============================================================================
 // LOGIN FORM COMPONENT
@@ -33,6 +34,9 @@ export function LoginForm() {
       setIsLoading(true);
       setError(null);
 
+      // Get guest cart session ID before login
+      const guestSessionId = getCookie('cart-session');
+
       const result = await signIn('credentials', {
         email: data.email,
         password: data.password,
@@ -45,6 +49,16 @@ export function LoginForm() {
       }
 
       if (result?.ok) {
+        // Merge guest cart with user cart if guest had items
+        if (guestSessionId) {
+          try {
+            await mergeGuestCart(guestSessionId);
+          } catch (err) {
+            console.error('Failed to merge guest cart:', err);
+            // Don't block login if merge fails
+          }
+        }
+
         router.push('/');
         router.refresh();
       }
@@ -53,6 +67,20 @@ export function LoginForm() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Helper to get cookie value
+  const getCookie = (name: string): string | null => {
+    if (typeof document === 'undefined') return null;
+
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+
+    if (parts.length === 2) {
+      return parts.pop()?.split(';').shift() || null;
+    }
+
+    return null;
   };
 
   return (
