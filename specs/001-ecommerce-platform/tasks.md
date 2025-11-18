@@ -287,29 +287,29 @@ Next.js 15 App Router structure:
 
 ### Tests for User Story 3 (TDD - Write FIRST)
 
-- [ ] T128 [P] [US3] Unit test for searchProducts service in `tests/unit/services/products.test.ts`
-- [ ] T129 [P] [US3] Component test for ProductSearch in `tests/component/products/product-search.test.tsx`
-- [ ] T130 [P] [US3] Component test for ProductFilters in `tests/component/products/product-filters.test.tsx`
+- [x] T128 [P] [US3] Unit test for searchProducts service in `tests/unit/services/products.test.ts`
+- [x] T129 [P] [US3] Component test for ProductSearch in `tests/component/products/product-search.test.tsx`
+- [x] T130 [P] [US3] Component test for ProductFilters in `tests/component/products/product-filters.test.tsx`
 
 ### Services for User Story 3
 
-- [ ] T131 [P] [US3] Implement searchProducts service in `services/products.ts` (PostgreSQL full-text search)
-- [ ] T132 [P] [US3] Implement filterProducts service in `services/products.ts` (category, price range filtering)
+- [x] T131 [P] [US3] Implement searchProducts service in `services/products.ts` (PostgreSQL full-text search)
+- [x] T132 [P] [US3] Implement filterProducts service in `services/products.ts` (category, price range filtering)
 
 ### API Routes for User Story 3
 
-- [ ] T133 [US3] Create search autocomplete API in `app/api/search/autocomplete/route.ts` (returns products + categories)
+- [x] T133 [US3] Create search autocomplete API in `app/api/search/autocomplete/route.ts` (returns products + categories)
 
 ### UI Components for User Story 3
 
-- [ ] T134 [P] [US3] Create ProductSearch component in `components/products/product-search.tsx` (Client Component with debounced input)
-- [ ] T135 [P] [US3] Create ProductFilters component in `components/products/product-filters.tsx` (Client Component with checkboxes)
-- [ ] T136 [P] [US3] Create SearchResults component in `components/products/search-results.tsx` (Server Component)
+- [x] T134 [P] [US3] Create ProductSearch component in `components/products/product-search.tsx` (Client Component with debounced input)
+- [x] T135 [P] [US3] Create ProductFilters component in `components/products/product-filters.tsx` (Client Component with checkboxes)
+- [x] T136 [P] [US3] Create SearchResults component in `components/products/search-results.tsx` (Server Component)
 
 ### Pages for User Story 3
 
-- [ ] T137 [US3] Create search results page in `app/(shop)/search/page.tsx` (Server Component with searchParams)
-- [ ] T138 [US3] Create category page in `app/(shop)/products/category/[slug]/page.tsx` (Server Component, ISR)
+- [x] T137 [US3] Create search results page in `app/(shop)/search/page.tsx` (Server Component with searchParams)
+- [x] T138 [US3] Create category page in `app/(shop)/products/category/[slug]/page.tsx` (Server Component, ISR)
 
 **Checkpoint**: Search and filtering working. Users can find products efficiently.
 

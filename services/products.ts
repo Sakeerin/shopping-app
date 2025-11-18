@@ -228,3 +228,209 @@ export async function getFeaturedProducts(limit: number = 8): Promise<ProductCar
     };
   });
 }
+
+// ============================================================================
+// T131: SEARCH PRODUCTS SERVICE (Phase 6 - User Story 3)
+// ============================================================================
+
+export async function searchProducts(
+  query: string,
+  options: { page?: number; limit?: number } = {}
+): Promise<ProductListResponse> {
+  const { page = 1, limit = 20 } = options;
+  const skip = (page - 1) * limit;
+
+  if (!query || query.length < 2) {
+    return {
+      products: [],
+      pagination: {
+        page,
+        limit,
+        total: 0,
+        totalPages: 0,
+      },
+    };
+  }
+
+  // PostgreSQL full-text search using case-insensitive pattern matching
+  const where: any = {
+    isActive: true,
+    OR: [
+      { name: { contains: query, mode: 'insensitive' } },
+      { description: { contains: query, mode: 'insensitive' } },
+      {
+        category: {
+          name: { contains: query, mode: 'insensitive' },
+        },
+      },
+    ],
+  };
+
+  // Fetch products and total count
+  const [products, total] = await Promise.all([
+    prisma.product.findMany({
+      where,
+      include: {
+        category: true,
+        reviews: {
+          select: { rating: true },
+        },
+      },
+      orderBy: [
+        { isFeatured: 'desc' }, // Featured products first
+        { createdAt: 'desc' }, // Then newest
+      ],
+      skip,
+      take: limit,
+    }),
+    prisma.product.count({ where }),
+  ]);
+
+  // Transform to ProductCardData
+  const productCards: ProductCardData[] = products.map((product) => {
+    const ratings = product.reviews.map((r) => r.rating);
+    const averageRating = ratings.length > 0
+      ? ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length
+      : undefined;
+
+    return {
+      id: product.id,
+      name: product.name,
+      slug: product.slug,
+      price: Number(product.price),
+      images: product.images,
+      categoryName: product.category.name,
+      isFeatured: product.isFeatured,
+      averageRating,
+      reviewCount: product.reviews.length,
+    };
+  });
+
+  return {
+    products: productCards,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
+}
+
+// ============================================================================
+// T132: FILTER PRODUCTS SERVICE (Phase 6 - User Story 3)
+// ============================================================================
+
+interface FilterOptions {
+  categoryIds?: string[];
+  minPrice?: number;
+  maxPrice?: number;
+  inStock?: boolean;
+  sortBy?: 'newest' | 'price_asc' | 'price_desc' | 'name_asc' | 'name_desc';
+  page?: number;
+  limit?: number;
+}
+
+export async function filterProducts(options: FilterOptions = {}): Promise<ProductListResponse> {
+  const {
+    categoryIds,
+    minPrice,
+    maxPrice,
+    inStock,
+    sortBy = 'newest',
+    page = 1,
+    limit = 20,
+  } = options;
+
+  const skip = (page - 1) * limit;
+
+  // Build where clause
+  const where: any = {
+    isActive: true,
+  };
+
+  // Category filter - support multiple categories
+  if (categoryIds && categoryIds.length > 0) {
+    where.categoryId = { in: categoryIds };
+  }
+
+  // Price range filter
+  if (minPrice !== undefined || maxPrice !== undefined) {
+    where.price = {};
+    if (minPrice !== undefined) where.price.gte = minPrice;
+    if (maxPrice !== undefined) where.price.lte = maxPrice;
+  }
+
+  // Stock availability filter
+  if (inStock) {
+    where.stock = { gt: 0 };
+  }
+
+  // Build orderBy clause
+  let orderBy: any = {};
+  switch (sortBy) {
+    case 'price_asc':
+      orderBy = { price: 'asc' };
+      break;
+    case 'price_desc':
+      orderBy = { price: 'desc' };
+      break;
+    case 'name_asc':
+      orderBy = { name: 'asc' };
+      break;
+    case 'name_desc':
+      orderBy = { name: 'desc' };
+      break;
+    case 'newest':
+    default:
+      orderBy = { createdAt: 'desc' };
+      break;
+  }
+
+  // Fetch products and total count
+  const [products, total] = await Promise.all([
+    prisma.product.findMany({
+      where,
+      include: {
+        category: true,
+        reviews: {
+          select: { rating: true },
+        },
+      },
+      orderBy,
+      skip,
+      take: limit,
+    }),
+    prisma.product.count({ where }),
+  ]);
+
+  // Transform to ProductCardData
+  const productCards: ProductCardData[] = products.map((product) => {
+    const ratings = product.reviews.map((r) => r.rating);
+    const averageRating = ratings.length > 0
+      ? ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length
+      : undefined;
+
+    return {
+      id: product.id,
+      name: product.name,
+      slug: product.slug,
+      price: Number(product.price),
+      images: product.images,
+      categoryName: product.category.name,
+      isFeatured: product.isFeatured,
+      averageRating,
+      reviewCount: product.reviews.length,
+    };
+  });
+
+  return {
+    products: productCards,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
+}
