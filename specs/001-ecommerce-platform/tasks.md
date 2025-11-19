@@ -323,52 +323,52 @@ Next.js 15 App Router structure:
 
 ### Tests for User Story 6 (TDD - Write FIRST)
 
-- [ ] T139 [P] [US6] Unit test for createProduct action in `tests/unit/actions/products.test.ts`
-- [ ] T140 [P] [US6] Unit test for updateOrderStatus action in `tests/unit/actions/orders.test.ts`
-- [ ] T141 [P] [US6] E2E test for admin operations in `tests/e2e/admin-operations.spec.ts`
+- [x] T139 [P] [US6] Unit test for createProduct action in `tests/unit/actions/products.test.ts`
+- [x] T140 [P] [US6] Unit test for updateOrderStatus action in `tests/unit/actions/orders.test.ts`
+- [x] T141 [P] [US6] E2E test for admin operations in `tests/e2e/admin-operations.spec.ts`
 
 ### Services for User Story 6
 
-- [ ] T142 [P] [US6] Implement getDashboardMetrics service in `services/analytics.ts` (revenue, orders, customers)
-- [ ] T143 [P] [US6] Implement getAllOrders service in `services/orders.ts` (admin view with filters)
-- [ ] T144 [P] [US6] Implement getCustomers service in `services/analytics.ts`
-- [ ] T145 [P] [US6] Implement getSalesReport service in `services/analytics.ts` (date range, top products)
+- [x] T142 [P] [US6] Implement getDashboardMetrics service in `services/analytics.ts` (revenue, orders, customers)
+- [x] T143 [P] [US6] Implement getAllOrders service in `services/analytics.ts` (admin view with filters)
+- [x] T144 [P] [US6] Implement getCustomers service in `services/analytics.ts`
+- [x] T145 [P] [US6] Implement getSalesReport service in `services/analytics.ts` (date range, top products)
 
 ### Server Actions for User Story 6
 
-- [ ] T146 [P] [US6] Create createProduct Server Action in `actions/products.ts` (admin only, with image upload)
-- [ ] T147 [P] [US6] Create updateProduct Server Action in `actions/products.ts` (admin only)
-- [ ] T148 [P] [US6] Create deleteProduct Server Action in `actions/products.ts` (admin only, soft delete)
-- [ ] T149 [P] [US6] Create createCategory Server Action in `actions/products.ts` (admin only)
-- [ ] T150 [P] [US6] Create updateOrderStatus Server Action in `actions/orders.ts` (admin only, sends notification)
-- [ ] T151 [P] [US6] Create createPromoCode Server Action in `actions/admin.ts` (admin only)
+- [x] T146 [P] [US6] Create createProduct Server Action in `actions/products.ts` (admin only, with image upload)
+- [x] T147 [P] [US6] Create updateProduct Server Action in `actions/products.ts` (admin only)
+- [x] T148 [P] [US6] Create deleteProduct Server Action in `actions/products.ts` (admin only, soft delete)
+- [x] T149 [P] [US6] Create createCategory Server Action in `actions/products.ts` (admin only)
+- [x] T150 [P] [US6] Create updateOrderStatus Server Action in `actions/orders.ts` (admin only, sends notification)
+- [x] T151 [P] [US6] Create createPromoCode Server Action in `actions/admin.ts` (admin only)
 
 ### UI Components for User Story 6
 
-- [ ] T152 [P] [US6] Create AdminSidebar component in `components/layout/sidebar.tsx`
-- [ ] T153 [P] [US6] Create StatsCard component in `components/admin/stats-card.tsx` (displays metrics)
-- [ ] T154 [P] [US6] Create ProductForm component in `components/admin/product-form.tsx` (Client Component, CRUD)
-- [ ] T155 [P] [US6] Create OrderActions component in `components/admin/order-actions.tsx` (Client Component, status updates)
-- [ ] T156 [P] [US6] Create AnalyticsCharts component in `components/admin/analytics-charts.tsx` (Client Component with chart library)
-- [ ] T157 [P] [US6] Create ImageUpload component in `components/shared/image-upload.tsx` (Client Component, Cloudinary integration)
+- [x] T152 [P] [US6] Create AdminSidebar component in `components/admin/admin-sidebar.tsx`
+- [x] T153 [P] [US6] Create StatsCard component in `components/admin/stats-card.tsx` (displays metrics)
+- [x] T154 [P] [US6] Create ProductForm component in `components/admin/product-form.tsx` (Client Component, CRUD)
+- [x] T155 [P] [US6] Create OrderActions component in `components/admin/order-actions.tsx` (Client Component, status updates)
+- [x] T156 [P] [US6] Create AnalyticsCharts component in `components/admin/analytics-charts.tsx` (Client Component with chart library)
+- [x] T157 [P] [US6] Create ImageUpload component in `components/admin/image-upload.tsx` (Client Component, Cloudinary integration)
 
 ### Pages for User Story 6
 
-- [ ] T158 [US6] Create admin layout in `app/(dashboard)/layout.tsx` (with sidebar, admin-only middleware)
-- [ ] T159 [US6] Create admin dashboard home in `app/(dashboard)/admin/page.tsx` (Server Component, metrics)
-- [ ] T160 [US6] Create product management page in `app/(dashboard)/admin/products/page.tsx` (Server Component)
-- [ ] T161 [US6] Create add product page in `app/(dashboard)/admin/products/new/page.tsx`
-- [ ] T162 [US6] Create edit product page in `app/(dashboard)/admin/products/[id]/edit/page.tsx`
-- [ ] T163 [US6] Create order management page in `app/(dashboard)/admin/orders/page.tsx` (Server Component with filters)
-- [ ] T164 [US6] Create order details page in `app/(dashboard)/admin/orders/[id]/page.tsx`
-- [ ] T165 [US6] Create customer management page in `app/(dashboard)/admin/customers/page.tsx`
-- [ ] T166 [US6] Create analytics page in `app/(dashboard)/admin/analytics/page.tsx`
-- [ ] T167 [US6] Create promotions page in `app/(dashboard)/admin/promotions/page.tsx`
+- [x] T158 [US6] Create admin layout in `app/admin/layout.tsx` (with sidebar, admin-only middleware)
+- [x] T159 [US6] Create admin dashboard home in `app/admin/page.tsx` (Server Component, metrics)
+- [x] T160 [US6] Create product management page in `app/admin/products/page.tsx` (Server Component)
+- [x] T161 [US6] Create add product page in `app/admin/products/new/page.tsx`
+- [x] T162 [US6] Create edit product page in `app/admin/products/[id]/edit/page.tsx`
+- [x] T163 [US6] Create order management page in `app/admin/orders/page.tsx` (Server Component with filters)
+- [x] T164 [US6] Create order details page in `app/admin/orders/[id]/page.tsx`
+- [x] T165 [US6] Create customer management page in `app/admin/customers/page.tsx`
+- [x] T166 [US6] Create analytics page in `app/admin/analytics/page.tsx`
+- [x] T167 [US6] Create promotions page in `app/admin/promotions/page.tsx`
 
 ### Email Templates for User Story 6
 
-- [ ] T168 [P] [US6] Create order shipped email template in `emails/order-shipped.tsx`
-- [ ] T169 [P] [US6] Create order delivered email template in `emails/order-delivered.tsx`
+- [x] T168 [P] [US6] Create order shipped email template in `lib/email-templates/order-shipped.tsx`
+- [x] T169 [P] [US6] Create order delivered email template in `lib/email-templates/order-delivered.tsx`
 
 **Checkpoint**: Admin dashboard functional. Products, orders, and customers can be managed efficiently.
 
