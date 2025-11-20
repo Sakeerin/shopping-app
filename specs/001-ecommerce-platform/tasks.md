@@ -382,32 +382,32 @@ Next.js 15 App Router structure:
 
 ### Tests for User Story 5 (TDD - Write FIRST)
 
-- [ ] T170 [P] [US5] Unit test for submitReview action in `tests/unit/actions/reviews.test.ts`
-- [ ] T171 [P] [US5] Component test for ReviewForm in `tests/component/reviews/review-form.test.tsx`
+- [x] T170 [P] [US5] Unit test for submitReview action in `tests/unit/actions/reviews.test.ts`
+- [x] T171 [P] [US5] Component test for ReviewForm in `tests/component/reviews/review-form.test.tsx`
 
 ### Services for User Story 5
 
-- [ ] T172 [P] [US5] Implement getProductReviews service in `services/reviews.ts` (with sorting, pagination)
-- [ ] T173 [P] [US5] Implement verifyPurchase service in `services/reviews.ts` (check if user purchased product)
+- [x] T172 [P] [US5] Implement getProductReviews service in `services/reviews.ts` (with sorting, pagination)
+- [x] T173 [P] [US5] Implement verifyPurchase service in `services/reviews.ts` (check if user purchased product)
 
 ### Server Actions for User Story 5
 
-- [ ] T174 [P] [US5] Create submitReview Server Action in `actions/reviews.ts` (verify purchase, validate)
-- [ ] T175 [P] [US5] Create updateReview Server Action in `actions/reviews.ts` (owner only)
-- [ ] T176 [P] [US5] Create deleteReview Server Action in `actions/reviews.ts` (owner or admin)
-- [ ] T177 [P] [US5] Create markReviewHelpful Server Action in `actions/reviews.ts`
+- [x] T174 [P] [US5] Create submitReview Server Action in `actions/reviews.ts` (verify purchase, validate)
+- [x] T175 [P] [US5] Create updateReview Server Action in `actions/reviews.ts` (owner only)
+- [x] T176 [P] [US5] Create deleteReview Server Action in `actions/reviews.ts` (owner or admin)
+- [x] T177 [P] [US5] Create markReviewHelpful Server Action in `actions/reviews.ts`
 
 ### UI Components for User Story 5
 
-- [ ] T178 [P] [US5] Create ReviewForm component in `components/reviews/review-form.tsx` (Client Component with star rating)
-- [ ] T179 [P] [US5] Create ReviewList component in `components/reviews/review-list.tsx` (Server Component)
-- [ ] T180 [P] [US5] Create ReviewCard component in `components/reviews/review-card.tsx` (displays single review)
-- [ ] T181 [P] [US5] Create RatingStars component in `components/reviews/rating-stars.tsx` (Client Component, interactive)
+- [x] T178 [P] [US5] Create ReviewForm component in `components/reviews/review-form.tsx` (Client Component with star rating)
+- [x] T179 [P] [US5] Create ReviewList component in `components/reviews/review-list.tsx` (Server Component)
+- [x] T180 [P] [US5] Create ReviewCard component in `components/reviews/review-card.tsx` (displays single review)
+- [x] T181 [P] [US5] Create RatingStars component in `components/reviews/rating-stars.tsx` (Client Component, interactive)
 
 ### Integration
 
-- [ ] T182 [US5] Add reviews section to product detail page in `app/(shop)/products/[slug]/page.tsx`
-- [ ] T183 [US5] Add average rating display to ProductCard component
+- [x] T182 [US5] Add reviews section to product detail page in `app/products/[slug]/page.tsx`
+- [x] T183 [US5] Add average rating display to ProductCard component
 
 **Checkpoint**: All user stories complete and independently functional. Platform feature-complete.
 

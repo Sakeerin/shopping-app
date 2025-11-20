@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import type { ProductCardData } from '@/types/product';
+import { RatingStars } from '@/components/reviews/rating-stars';
 
 // ============================================================================
 // PRODUCT CARD COMPONENT (Server Component)
@@ -57,13 +58,15 @@ export function ProductCard({ product }: ProductCardProps) {
 
         <p className="mb-2 text-xs text-gray-500">{categoryName}</p>
 
-        {averageRating !== undefined && reviewCount > 0 && (
-          <div className="mb-2 flex items-center gap-1 text-xs text-gray-600">
-            <div className="flex items-center">
-              <span className="text-yellow-400">★</span>
-              <span className="ml-1">{averageRating.toFixed(1)}</span>
-            </div>
-            <span className="text-gray-400">({reviewCount})</span>
+        {averageRating !== undefined && reviewCount !== undefined && reviewCount > 0 && (
+          <div className="mb-2">
+            <RatingStars
+              rating={averageRating}
+              readonly
+              size="sm"
+              showCount
+              count={reviewCount}
+            />
           </div>
         )}
 

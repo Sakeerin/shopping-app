@@ -2,6 +2,11 @@ import { notFound } from 'next/navigation';
 import { getProductBySlug } from '@/services/products';
 import { ProductGallery } from '@/components/products/product-gallery';
 import { AddToCartButton } from '@/components/products/add-to-cart-button';
+import { RatingStars } from '@/components/reviews/rating-stars';
+import { ReviewForm } from '@/components/reviews/review-form';
+import { ReviewList } from '@/components/reviews/review-list';
+import { getProductRatingSummary, hasUserReviewed, verifyPurchase } from '@/services/reviews';
+import { getServerSession } from 'next-auth';
 import type { Metadata } from 'next';
 
 // ============================================================================
@@ -48,6 +53,13 @@ export default async function ProductPage({ params }: ProductPageProps) {
     currency: 'USD',
   }).format(Number(product.price));
 
+  // Get session and review data
+  const session = await getServerSession();
+  const userId = session?.user?.id;
+  const ratingSummary = await getProductRatingSummary(product.id);
+  const hasReviewed = userId ? await hasUserReviewed(userId, product.id) : false;
+  const hasPurchased = userId ? await verifyPurchase(userId, product.id) : false;
+
   return (
     <div className="space-y-8">
       {/* Breadcrumbs */}
@@ -82,25 +94,15 @@ export default async function ProductPage({ params }: ProductPageProps) {
           </div>
 
           {/* Rating */}
-          {product.reviewCount > 0 && (
-            <div className="flex items-center gap-2">
-              <div className="flex items-center">
-                {[...Array(5)].map((_, i) => (
-                  <svg
-                    key={i}
-                    className={`h-5 w-5 ${
-                      i < Math.round(product.averageRating) ? 'text-yellow-400' : 'text-gray-300'
-                    }`}
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                ))}
-              </div>
-              <span className="text-sm text-gray-600">
-                {product.averageRating.toFixed(1)} ({product.reviewCount} reviews)
-              </span>
+          {ratingSummary.totalReviews > 0 && (
+            <div>
+              <RatingStars
+                rating={ratingSummary.averageRating}
+                readonly
+                size="md"
+                showCount
+                count={ratingSummary.totalReviews}
+              />
             </div>
           )}
 
@@ -158,42 +160,90 @@ export default async function ProductPage({ params }: ProductPageProps) {
       </div>
 
       {/* Reviews Section */}
-      {product.reviews.length > 0 && (
-        <div className="border-t border-gray-200 pt-8">
-          <h2 className="text-2xl font-bold text-gray-900">Customer Reviews</h2>
-          <div className="mt-6 space-y-6">
-            {product.reviews.slice(0, 5).map((review) => (
-              <div key={review.id} className="rounded-lg border border-gray-200 bg-white p-6">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium text-gray-900">{review.user.name}</p>
-                      <div className="flex items-center">
-                        {[...Array(5)].map((_, i) => (
-                          <svg
-                            key={i}
-                            className={`h-4 w-4 ${
-                              i < review.rating ? 'text-yellow-400' : 'text-gray-300'
-                            }`}
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                          </svg>
-                        ))}
-                      </div>
+      <div className="border-t border-gray-200 pt-8" id="reviews">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+          {/* Left Column: Rating Summary & Review Form */}
+          <div className="space-y-8 lg:col-span-1">
+            {/* Rating Summary */}
+            <div className="rounded-lg border bg-card p-6">
+              <h2 className="text-xl font-bold">Customer Reviews</h2>
+              {ratingSummary.totalReviews > 0 ? (
+                <div className="mt-4 space-y-4">
+                  <div className="flex items-center gap-3">
+                    <span className="text-4xl font-bold">
+                      {ratingSummary.averageRating.toFixed(1)}
+                    </span>
+                    <div>
+                      <RatingStars rating={ratingSummary.averageRating} readonly size="md" />
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {ratingSummary.totalReviews} {ratingSummary.totalReviews === 1 ? 'review' : 'reviews'}
+                      </p>
                     </div>
-                    <p className="mt-1 text-xs text-gray-500">
-                      {new Date(review.createdAt).toLocaleDateString()}
-                    </p>
+                  </div>
+
+                  {/* Rating Distribution */}
+                  <div className="space-y-2">
+                    {[5, 4, 3, 2, 1].map((rating) => {
+                      const count = ratingSummary.ratingDistribution[rating as 1 | 2 | 3 | 4 | 5];
+                      const percentage = ratingSummary.totalReviews > 0
+                        ? (count / ratingSummary.totalReviews) * 100
+                        : 0;
+
+                      return (
+                        <div key={rating} className="flex items-center gap-2 text-sm">
+                          <span className="w-8">{rating}★</span>
+                          <div className="flex-1">
+                            <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                              <div
+                                className="h-full bg-yellow-400"
+                                style={{ width: `${percentage}%` }}
+                              />
+                            </div>
+                          </div>
+                          <span className="w-12 text-right text-muted-foreground">{count}</span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
-                {review.comment && <p className="mt-4 text-sm text-gray-600">{review.comment}</p>}
+              ) : (
+                <p className="mt-4 text-sm text-muted-foreground">No reviews yet</p>
+              )}
+            </div>
+
+            {/* Review Form */}
+            {userId && !hasReviewed && (
+              <div className="rounded-lg border bg-card p-6">
+                <ReviewForm productId={product.id} hasPurchased={hasPurchased} />
               </div>
-            ))}
+            )}
+
+            {!userId && (
+              <div className="rounded-lg border bg-card p-6 text-center">
+                <p className="text-sm text-muted-foreground">
+                  <a href="/auth/login" className="text-primary hover:underline">
+                    Sign in
+                  </a>{' '}
+                  to write a review
+                </p>
+              </div>
+            )}
+
+            {hasReviewed && (
+              <div className="rounded-lg border border-green-200 bg-green-50 p-6">
+                <p className="text-sm text-green-800">
+                  You have already reviewed this product
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Right Column: Review List */}
+          <div className="lg:col-span-2">
+            <ReviewList productId={product.id} />
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
