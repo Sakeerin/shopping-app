@@ -2,13 +2,15 @@
 
 import { revalidatePath } from 'next/cache';
 import bcrypt from 'bcryptjs';
+import { headers } from 'next/headers';
 import { prisma } from '@/lib/db';
 import { registerSchema, resetPasswordSchema, newPasswordSchema } from '@/lib/validations';
 import { sendWelcomeEmail, sendPasswordResetEmail } from '@/lib/email';
 import crypto from 'crypto';
+import { authRateLimit, passwordResetRateLimit, getClientIdentifier, checkRateLimit } from '@/lib/rate-limit';
 
 // ============================================================================
-// AUTH SERVER ACTIONS
+// AUTH SERVER ACTIONS (with T199: Rate Limiting)
 // ============================================================================
 
 type ActionResult<T = any> = {
@@ -23,6 +25,18 @@ type ActionResult<T = any> = {
 
 export async function registerUser(formData: FormData): Promise<ActionResult> {
   try {
+    // T199: Rate limiting check
+    const headersList = await headers();
+    const identifier = getClientIdentifier(headersList);
+    const rateLimitResult = await checkRateLimit(authRateLimit, identifier);
+
+    if (!rateLimitResult.success) {
+      return {
+        success: false,
+        error: `Too many registration attempts. Please try again in ${Math.ceil((rateLimitResult.reset - Date.now()) / 60000)} minutes.`,
+      };
+    }
+
     // Parse and validate form data
     const data = {
       name: formData.get('name') as string,
@@ -104,6 +118,18 @@ export async function registerUser(formData: FormData): Promise<ActionResult> {
 
 export async function requestPasswordReset(formData: FormData): Promise<ActionResult> {
   try {
+    // T199: Rate limiting check for password reset
+    const headersList = await headers();
+    const identifier = getClientIdentifier(headersList);
+    const rateLimitResult = await checkRateLimit(passwordResetRateLimit, identifier);
+
+    if (!rateLimitResult.success) {
+      return {
+        success: false,
+        error: `Too many password reset attempts. Please try again in ${Math.ceil((rateLimitResult.reset - Date.now()) / 60000)} minutes.`,
+      };
+    }
+
     const data = {
       email: formData.get('email') as string,
     };

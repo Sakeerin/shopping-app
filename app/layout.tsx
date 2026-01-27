@@ -2,9 +2,18 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { SessionProvider } from 'next-auth/react';
 import { Toaster } from '@/components/ui/toaster';
+import { Analytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import './globals.css';
 
-const inter = Inter({ subsets: ['latin'] });
+// T191: Font optimization with next/font
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap', // Use font-display: swap for better performance
+  preload: true,
+  variable: '--font-inter',
+  fallback: ['system-ui', 'arial'],
+});
 
 export const metadata: Metadata = {
   title: {
@@ -46,6 +55,9 @@ export default function RootLayout({
         <SessionProvider>
           {children}
           <Toaster />
+          {/* T203: Vercel Analytics & Speed Insights */}
+          <Analytics />
+          <SpeedInsights />
         </SessionProvider>
       </body>
     </html>

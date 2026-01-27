@@ -409,3 +409,24 @@ export async function mergeGuestCart(
   // Return merged cart
   return getCart(userId);
 }
+
+// ============================================================================
+// HELPER: GET CART ITEM COUNT (for header display)
+// ============================================================================
+
+export async function getCartItemCount(userId: string): Promise<number> {
+  const cart = await prisma.cart.findFirst({
+    where: { userId },
+    select: {
+      items: {
+        select: {
+          quantity: true,
+        },
+      },
+    },
+  });
+
+  if (!cart) return 0;
+
+  return cart.items.reduce((sum, item) => sum + item.quantity, 0);
+}
